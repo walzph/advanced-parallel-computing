@@ -3,8 +3,8 @@
 #include <time.h>
 #include <sys/time.h>    
 
-#define ARRAY_MIN (1024) /* 1/4 smallest cache */
-#define ARRAY_MAX (4096*4096) /* 1/4 largest cache */
+#define ARRAY_MIN (16*1024) /* 1/4 smallest cache */
+#define ARRAY_MAX (1536*1024) /* 1/4 largest cache */
 
 int x[ARRAY_MAX]; /* array going to stride through */
 
