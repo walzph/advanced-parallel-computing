@@ -5,7 +5,7 @@
 	Philipp Walz
 
 	usage: ./main c n
-		c: number of increments (optional, default 1024*1024)
+		c: number of increments (optional, default 3*1024*1024)
 		n: number of threads (optional, default number of cpu cores)
 
  */
@@ -43,10 +43,10 @@ void unlock_rmw(bool* lock)
 
 int main(int argc, char** argv)
 {
-	const uint c = argc >= 2 ? atoi(argv[1]) : 1024 * 1024;
+	const uint c = argc >= 2 ? atoi(argv[1]) : 3 * 1024 * 1024;
 	const uint n = argc >= 3 ? atoi(argv[2]) : get_nprocs();
 
-	if(c % n) exit(-1);
+	if(c % n) exit(1);
 
 	uint cntr, ci = c / n;
 
@@ -59,8 +59,8 @@ int main(int argc, char** argv)
 		cntr = 0;
 		pthread_t t[n];
 
-		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc, &args)) exit(-1);
-		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(-1);
+		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc, &args)) exit(2);
+		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(3);
 
 		printf("naive    %010d %c= %010d\n", cntr, cntr == c ? '=' : '!', c);
 	}
@@ -69,8 +69,8 @@ int main(int argc, char** argv)
 		cntr = 0;
 		pthread_t t[n];
 
-		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc_mtx, &args)) exit(-1);
-		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(-1);
+		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc_mtx, &args)) exit(2);
+		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(3);
 
 		printf("mutex    %010d %c= %010d\n", cntr, cntr == c ? '=' : '!', c);
 	}
@@ -79,8 +79,8 @@ int main(int argc, char** argv)
 		cntr = 0;
 		pthread_t t[n];
 
-		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc_atomic, &args)) exit(-1);
-		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(-1);
+		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc_atomic, &args)) exit(2);
+		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(3);
 
 		printf("atomics  %010d %c= %010d\n", cntr, cntr == c ? '=' : '!', c);
 	}
@@ -89,8 +89,8 @@ int main(int argc, char** argv)
 		cntr = 0;
 		pthread_t t[n];
 
-		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc_mtx, &args)) exit(-1);
-		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(-1);
+		for(uint i = 0; i < n; ++i) if(pthread_create(&t[i], NULL, inc_mtx, &args)) exit(2);
+		for(uint i = 0; i < n; ++i) if(pthread_join(t[i], NULL)) exit(3);
 
 		printf("lock_rmw %010d %c= %010d\n", cntr, cntr == c ? '=' : '!', c);
 	}
