@@ -8,4 +8,4 @@ clean:
 	rm -f main
 
 main: main.c
-	$(CC) -std=c99 -g -Wall -pthread $< -o $@
+	$(CC) -std=gnu99 -g -Wall -pthread $< -o $@
