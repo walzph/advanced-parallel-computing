@@ -46,7 +46,7 @@ int main()
 
 		free(buf-t);
 
-		double ms = 1e6 * chTimerElapsedTime(&t0, &t1);
+		double ms = (1e6 * chTimerElapsedTime(&t0, &t1)) / n;
 		printf("%d, %f\n", t, ms);
 	}
 	
