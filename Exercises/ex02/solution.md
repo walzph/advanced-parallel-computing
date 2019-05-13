@@ -38,5 +38,36 @@ We strongly accept the authors work and share their opinion that NUMA effects pl
 
 ### 2.2 Pointer Chasing Benchmark
 
+#### 1) Latency Analysis 
+
+![Pointer Chasing Benchmark](./pointer-chasing.png)
+
+**AMD Opteron 6174 Specifications**
+
+| Description             | Value                                        |                    |
+| ----------------------- | -------------------------------------------- | ------------------ |
+| Core Count              | 12                                           | -                  |
+| Freequency              | 2.2 GHz                                      | -                  |
+| Total Cache             | 19.6 MB                                      | -                  |
+| L1 Cache                | 64 KB (Data) + 64KB (Instruction) (per core) | 1.2 ns             |
+| L2 Cache                | 512 KB (per core)                            | 3.0 ns             |
+| L3 Cache                | 12 MB (per socket)                           | 15.0 ns            |
+| Main Memory             |                                              | 56 ns              |
+| TLB miss penalty        | -                                            | 80 cycles =  36 ns |
+| TLB/Cache associativity | direct mapped                                |                    |
+|                         |                                              |                    |
+
+
 ### 2.3 Multi-threaded load bandwidth
+
+#### First Machine: AMD Opteron Processor 6174
+![Memory Specifications AMD Opteron Processor 6174](./memory_specs_amd-opteron.png)
+
+![Bandwidth AMD Opteron Processor 6174)](./ceg-moore (AMD Opteron Processor 6174) (48 cores).svg)
+
+#### Second Machine: Intel Core i7-4790K
+
+![Memory Specifications Intel Core i7-4790K](./memory_specs_i7-4790.png)
+
+![Bandwidth Intel Core i7-4790K](./Intel Core i7-4790K (8 logical cores, 4 physical).svg)
 
