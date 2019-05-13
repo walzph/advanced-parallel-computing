@@ -1,17 +1,5 @@
-parallelizing a job rarely multiplies its memory requirements by p
+In the paper "Cost-Effective Parallel Computing", David A. Wood and Mark D. Hill show in which cases multiprocessor systems are financially worthwhile, even if no linear speedup is available.
 
-MIPS should be accompanied by 1mbyte of memory
+They show that this mainly depends on memory. If a processor does not provide enough performance, you should use multiple processors instead to utilize the full memory capacity and bandwidth.
 
-if one processor does not provide enough power, multiple processors should be used to make effective use if the memorys capacity and bandwith
-
-costperf(p) < costperf(1) => better
-
-parallel computing is more cost effective whenever speedup(p) > costup(p)
-
-m small or p large, m' much larger than m, because m/p puts too few memory chips with each processor to adequately satisfy the processors bandwith requirements
-
-when memory is sufficiently large (and expensive), more than one processor should be used to make effective use of the memory capacity and bandwidth
-
-if one processor does not provide enough power, multiple processors should be used to balance the memorys capacity and bandwidth
-
-software development costs maybe higher for parallel applications
+I accept their statement, even though the paper was written a few years ago and parallel systems are now needed to keep track of Amdahl's Law, as the performance of a single processor can no longer be achieved by increasing the clock frequency. I think it's good that even at that time they didn't just use the pure speedup as a basis, but also referred to the total costs for the respective performance.
