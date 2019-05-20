@@ -11,6 +11,7 @@ Philipp Walz
 ### 3.1 Reading
 
 #### David A. Wood and Mark D. Hill. 1995. Cost-Effective Parallel Computing. 
+
 In the paper "Cost-Effective Parallel Computing", David A. Wood and Mark D. Hill show in which cases multiprocessor systems are financially worthwhile, even if no linear speedup is available.
 
 They show that this mainly depends on memory. If a processor does not provide enough performance, you should use multiple processors instead to utilize the full memory capacity and bandwidth.
