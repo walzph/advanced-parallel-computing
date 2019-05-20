@@ -12,6 +12,11 @@ Philipp Walz
 
 #### Alain Kägi, Doug Burger, and James R. Goodman. 1997. Efficient synchronization: let them eat QOLB. 
 
+In their paper, Alain Kägi, Doug Burger and James R. Goodman compare many different synchronizations and apply optimization mechanisms to them. They show that, contrary to many previous statements by other scientists, QOLB synchronization is much faster than other synchronization methods (outperforms MCS by 40%).
+
+The most important finding was that QOLB is not completely prohibitive despite the more complex implementation into the hardware and it will still be worth it due to the enormous performance gains (especially together with collocation).
+
+I accept the authors' statement that QOLB can be much faster than many other synchronization methods and that the optimization mechanisms can be best applied to it. However, QOLB is not as relevant today as it was advertised in the paper several years ago. This is probably due to the rather complex way in which QOLB has to be implemented.
 
 
 #### José L. Abellán, Juan Fernández and Manuel E. Acacio. GLocks: Efficient Support for Highly-Contended Locks in Many-Core CMPs. 
