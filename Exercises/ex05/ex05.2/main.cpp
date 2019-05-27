@@ -19,6 +19,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#define NUM_VERSIONS 1
+#define NUM_BARRIER_STEPS 500
+
 typedef unsigned int uint;
 
 typedef struct
@@ -34,7 +37,7 @@ void* threadFn(void* args);
  PTHREAD barrier
 */
 void init(pthread_barrier_t *barrier, int num_threads) {
-	pthread_barrier_init(barrier, NULL, num_threads + 1);
+	pthread_barrier_init(barrier, NULL, num_threads);
 }
 
 void wait(pthread_barrier_t *barrier) { 
@@ -75,21 +78,24 @@ void* threadFn(void *args) {
 	uint* pssd_barriers_cnt = ((args_t*) args)->pssd_barriers_cnt;
 	T* mybarrier = (T*)(((args_t*) args)->barrier);
 
-	int wait_sec = 1;
-	if (*thread_id == 0) wait_sec = 5;
+	int wait_sec = 0.00001;
+	if (*thread_id == 0) wait_sec = 0.00005;
 
-	printf("thread %d: Wait for %d seconds.\n", (int)(*thread_id), wait_sec);
-	sleep(wait_sec);
-	printf("thread %d: I'm ready...\n", (int)(*thread_id));
+	// perform k barrier steps
+	for (int k=0; k<NUM_BARRIER_STEPS; ++k) 
+	{
+		printf("thread %d: Wait for %d seconds.\n", (int)(*thread_id), wait_sec);
+		sleep(wait_sec);
+		printf("thread %d: I'm ready...\n", (int)(*thread_id));
 
-	wait(mybarrier);
+		wait(mybarrier);
 
-	(*pssd_barriers_cnt)++;
-	printf("thread %d: passed barrier no. %d. going on!\n", (int)(*thread_id), (int)(*pssd_barriers_cnt));
+		(*pssd_barriers_cnt)++;
+		printf("thread %d: passed barrier no. %d. going on!\n", (int)(*thread_id), (int)(*pssd_barriers_cnt));
+	}
 	return NULL;
 }
 
-// template void* threadFn<void*>(void *args); 
 
 int main( int argc, char * argv[] )
 {
@@ -104,25 +110,25 @@ int main( int argc, char * argv[] )
 	uint short_ids[n];
 	uint pssd_barriers_cnt[n];
 
-	uint* barriers[5];
-	pthread_barrier_t pthread_barrier; barriers[0] = (uint*) &pthread_barrier;
-	counter_barrier_t counter_barrier; barriers[1] = (uint*) &counter_barrier;
+	uint* barriers[1];
+	pthread_barrier_t pthread_barrier; init(&pthread_barrier, n); barriers[0] = (uint*) &pthread_barrier;
+	// counter_barrier_t counter_barrier; init(&pthread_barrier, n); barriers[1] = (uint*) &counter_barrier;
 	// ...
 
-	/* test all barrier implementations */
-	for(int j = 0; j<5; ++j)
-	{		
+	// test all barrier implementations
+	for(int j = 0; j<NUM_VERSIONS; j++)
+	{	
+		// span n threads
 		for(uint i = 0; i < n; ++i) 
 		{
 			short_ids[i] = i;
 			pssd_barriers_cnt[i] = 0;
-			args_t args = { &short_ids[i] , &pssd_barriers_cnt[i] , barriers[i] };
+			args_t args = { &short_ids[i] , &pssd_barriers_cnt[i] , barriers[j] };
 			if(pthread_create(&t[i], NULL, threadFn<pthread_barrier_t>, &args)) exit(2);
 		}
 		
-		printf("main() is ready.\n");
-  		wait(&pthread_barrier);
-  		printf("main() is going!\n");
+		// printf("main() is ready.\n");
+		// wait(&pthread_barrier);
 		
 		for(uint i = 0; i < n; ++i) 
 		{
