@@ -21,8 +21,13 @@ I accept the authors' statement that QOLB can be much faster than many other syn
 
 #### José L. Abellán, Juan Fernández and Manuel E. Acacio. GLocks: Efficient Support for Highly-Contended Locks in Many-Core CMPs. 
 
+In the paper "GLocks: Efﬁcient Support for Highly-Contended Locks in Many-Core CMPs" José L. Abellán and his colleagues describe GLocks, which is their optimization approach to lock synchronization.
 
+Synchronization among many-core CMPs often relies on shared variables for access coordination. This can be a key limitor to performance and scalability. Therefore, the author's main contribution is the concept of a novel hardware-supported lock mechanism. Because *GLocks* uses a dedicated network for synchronization, the technology skips the memory hierearchy. 
 
+To prove the viability of this highly-contended lock concept, the authors provide a comprehensive comparison against common shared-memory locks. This evaluations shows that GLocks indeed reduces power consumption and execution time.
+
+We strongly agree with the author's proposal. They showed a reasonable lock optimization approach which might be a candidate to leverage various multi-core applications.   
 
 
 ###  4.2 Result Validation
@@ -49,6 +54,6 @@ lock_mcs 0003145728 == 0003145728
 |       24   |         0.141083   |      13935589.11   |         0.044300   |      44380570.53   |         1.850044   |       1062720.49   |         1.271577   |       1546174.74|
 |       32   |         0.138092   |      14237439.41   |         0.045614   |      43102349.29   |         3.953425   |        497310.58   |         1.273628   |       1543684.50|
 |       40   |         0.137583   |      14290107.47   |         0.045915   |      42820086.73   |         7.756291   |        253481.98   |         1.290627   |       1523353.07|
-|       48   |         0.143832   |      13669283.11   |         0.044959   |      43730745.41   |         8.347212   |        235537.34   |         2.169427   |        906266.89|            906266.89
+|       48   |         0.143832   |      13669283.11   |         0.044959   |      43730745.41   |         8.347212   |        235537.34   |         2.169427   |        906266.89|            906266.89|
 
 ![Shared Counter Performance](./chart.svg)
