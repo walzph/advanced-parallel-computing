@@ -80,7 +80,7 @@ void* threadFn(void *args) {
 
 	int wait_sec = 0.00001;
 	if (*thread_id == 0) wait_sec = 0.00005;
-
+	
 	// perform k barrier steps
 	for (int k=0; k<NUM_BARRIER_STEPS; ++k) 
 	{
@@ -126,10 +126,7 @@ int main( int argc, char * argv[] )
 			args_t args = { &short_ids[i] , &pssd_barriers_cnt[i] , barriers[j] };
 			if(pthread_create(&t[i], NULL, threadFn<pthread_barrier_t>, &args)) exit(2);
 		}
-		
-		// printf("main() is ready.\n");
-		// wait(&pthread_barrier);
-		
+
 		for(uint i = 0; i < n; ++i) 
 		{
 			if(pthread_join(t[i], NULL)) exit(3);
