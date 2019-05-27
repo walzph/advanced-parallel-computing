@@ -84,14 +84,14 @@ void* threadFn(void *args) {
 	// perform k barrier steps
 	for (int k=0; k<NUM_BARRIER_STEPS; ++k) 
 	{
-		printf("thread %d: Wait for %d seconds.\n", (int)(*thread_id), wait_sec);
+		// printf("thread %d: Wait for %d seconds.\n", (int)(*thread_id), wait_sec);
 		sleep(wait_sec);
-		printf("thread %d: I'm ready...\n", (int)(*thread_id));
+		// printf("thread %d: I'm ready...\n", (int)(*thread_id));
 
 		wait(mybarrier);
 
 		(*pssd_barriers_cnt)++;
-		printf("thread %d: passed barrier no. %d. going on!\n", (int)(*thread_id), (int)(*pssd_barriers_cnt));
+		// printf("thread %d: passed barrier no. %d. going on!\n", (int)(*thread_id), (int)(*pssd_barriers_cnt));
 	}
 	return NULL;
 }
@@ -130,6 +130,10 @@ int main( int argc, char * argv[] )
 		for(uint i = 0; i < n; ++i) 
 		{
 			if(pthread_join(t[i], NULL)) exit(3);
+		}
+
+		for (int i=0; i<sizeof(pssd_barriers_cnt)/sizeof(uint); i++ ) {
+			printf("thread %d: passed barrier no. %d. going on!\n", i, pssd_barriers_cnt[i]);
 		}
 
 		destroy(&pthread_barrier);
