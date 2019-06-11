@@ -23,7 +23,7 @@
 #include <vector>
 #include <bits/stdc++.h> 
 
-#define THREAD_CNT 1
+#define THREAD_CNT 4
 #define MIN 0 
 #define MAX 100
 #define DEBUGGING true
@@ -80,11 +80,12 @@ void* thread_fn_pthread(void *args)
     int off = 1;
     for (int d = v.size()/2; d >0; d = d/2) {
         pthread_barrier_wait(&barrier);
-        for (int i = 0; i<(d/thread_cnt);i++) {
+        int iSum = (d/thread_cnt) > 0?(d/thread_cnt):1;
+        for (int i = 0; i<iSum;i++) {
             // TODO!!
             if (index<d && ((i*thread_cnt)<d || i==0)) {
-                int left  = (off*(2*index+1)-1)+i*thread_cnt*2;
-                int right = (off*(2*index+2)-1)+i*thread_cnt*2;
+                int left  = (off*(2*index+1)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;
+                int right = (off*(2*index+2)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;
                 v[right] += v[left];
             } 
         }
@@ -104,11 +105,12 @@ void* thread_fn_pthread(void *args)
     for (int d = 1; d < v.size(); d = d*2) {
         off /= 2;
         pthread_barrier_wait(&barrier);
-        for (int i = 0; i<((v.size()/2)/thread_cnt);i++) {
+        int iSum = (d/thread_cnt) > 0?(d/thread_cnt):1;
+        for (int i = 0; i<iSum;i++) {
             // TODO!!!
-            if (index<d && ((i*thread_cnt)<=(d/2) || i==0)) {
-                int left  = (off*(2*index+1)-1)+i*thread_cnt*2;;
-                int right = (off*(2*index+2)-1)+i*thread_cnt*2;;
+            if (index<d && ((i*thread_cnt)<d || i==0)) {
+                int left  = (off*(2*index+1)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;;
+                int right = (off*(2*index+2)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;;
                 int t = v[left];
                 v[left] = v[right];
                 v[right] += t;

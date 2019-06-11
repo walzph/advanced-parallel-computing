@@ -1,0 +1,48 @@
+transaction memory concurrency control paradigm for atomic and isolated executions
+
+one of the most promising solutions for programming multicore processors
+
+software only tm: overhead in excess of most users tolerance
+
+hardware only tm: high costs
+
+hybrid for example hardware accelerated stm
+
+tm introduces programming issues:
+- interaction with nontransactional codes 
+- exceptions and serializability
+- interaction with code that cannot be transactionalized
+- livelock
+
+tm can be useful tool in parallel programming portfolio, but not going to solve parallel programming dilemma by itself
+
+no mention in large-scale applications that make use of tm
+
+builded state-of-the-art STM -> IBM STM
+
+compared performance of this STM with Intel STM and Sun TL2 STM
+
+stm implementations: conflict detection, guaranteeing consistency, preservation of atomicity and isolation, conflict resolution
+
+performance very low: on kmeans single threaded performance at four threads for IBM STM, vacations none of the STMs overcomes overhead, even with eight threads
+
+based on results road ahead
+
+
+In their paper, Alain Kägi, Doug Burger and James R. Goodman compare many different synchronizations and apply optimization mechanisms to them. They show that, contrary to many previous statements by other scientists, QOLB synchronization is much faster than other synchronization methods (outperforms MCS by 40%).
+
+The most important finding was that QOLB is not completely prohibitive despite the more complex implementation into the hardware and it will still be worth it due to the enormous performance gains (especially together with collocation).
+
+I accept the authors' statement that QOLB can be much faster than many other synchronization methods and that the optimization mechanisms can be best applied to it. However, QOLB is not as relevant today as it was advertised in the paper several years ago. This is probably due to the rather complex way in which QOLB has to be implemented.
+
+Performance scheiße -> Man muss Overhead verringern -> würden den ganzen research auf elimination of dynamically unnecessary read and write barriers legen
+
+-> skeptisch gegenüber Lösungen, bei denen der Entwickler zusätzliche Arbeit leisten muss
+
+-> egal, ob tm in hardware oder software implementiert wurde, es erzeugt eine extreme komplexität, welches die Produktivität letztendlich verringert.
+
+In ihrem Paper stellen Călin Caşcaval und seine Kollegen ein neues Software Transactional Memory Framework von IBM vor und vergleichen dieses mit dem Intel STM und Sun TL2 STM. Dabei gehen sie auch auf die verschiedenen Problematiken beim Programmieren mit TM ein, wobei diese sich sowohl auf HTM als auch auf STM beziehen.
+
+Die Haupt-Erkenntnis war, dass die Performance bei allen STM Implementierungen sehr schlecht war. Während beim k-means Algorithmus die IBM STM Implementierung wenigstens noch ab 4 Kernen eine Single Threaded Performance erreichte, war dies bei vacations für keine der Implementierungen möglich, nicht einmal mit 8 Kernen. Dies führen die Entwickler auf den enormen Overhead der TM zurück und untersuchen diesen noch in Bezug auf die verschiedenen STM Operationen. Dabei schneiden vor allem read and write barriers schlecht ab, weshalb man bei weiterem research versuchen sollte diesen zu minimieren.
+
+Ich akzeptiere die Meinung der Autoren, dass die enorme Komplexität, welche durch TM Programmierung erzeugt wird (egal ob in Hardware oder Software) letztendlich die Produktivität verringert und es dadurch schwer wird dies auch außerhalb von research Arbeiten einzusetzen.
