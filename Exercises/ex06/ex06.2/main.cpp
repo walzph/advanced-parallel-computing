@@ -22,6 +22,9 @@
 #include <map> 
 #include <vector>
 #include <bits/stdc++.h> 
+#include <ctime>
+#include <ratio>
+#include <chrono>
 
 #define THREAD_CNT 4
 #define MIN 0 
@@ -127,7 +130,7 @@ int main( int argc, char * argv[] )
 	// Parse arguments
 	const uint element_cnt = argc >= 2 ? atoi(argv[1]) : 8;
 	thread_cnt = argc >= 3 ? atoi(argv[2]) : THREAD_CNT;
-    struct timespec t0, t1;
+    // struct timespec t0, t1;
     
     if (ceil(log2(element_cnt)) != floor(log2(element_cnt))) exit(3);
 
@@ -142,7 +145,8 @@ int main( int argc, char * argv[] )
 
     //for(int j=0; j<thread_cnts.size();j++){
         //thread_cnt = thread_cnts[j];
-        clock_gettime(CLOCK_MONOTONIC, &t0);
+        // clock_gettime(CLOCK_MONOTONIC, &t0);
+        chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
         for(uint i = 0; i < thread_cnt; ++i) 
         {
             args_t args = { NULL };        
@@ -156,11 +160,14 @@ int main( int argc, char * argv[] )
         for(uint i = 0; i < thread_cnt; ++i) if(pthread_join(threads[i], NULL)) exit(3);
         
         v = preScan2Scan(v, full_sum);
-        clock_gettime(CLOCK_MONOTONIC, &t1);
+        // clock_gettime(CLOCK_MONOTONIC, &t1);
+        chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
 
         if (DEBUGGING) printVector(v);    
-        double time = (double) (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)/1e6;
-        cout << endl << thread_cnt << "," << time << endl;
+        // double time = (double) (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)/1e6;
+        // double time = (double) (t1.tv_nsec - t0.tv_nsec)/1e6;
+        chrono::duration<double, std::milli> time_span = t2 - t1;
+        cout << endl << thread_cnt << "," << time_span.count() << endl;
     //}
     return 0;
 }
