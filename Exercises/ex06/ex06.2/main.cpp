@@ -26,8 +26,8 @@
 #define THREAD_CNT 4
 #define MIN 0 
 #define MAX 100
-#define DEBUGGING true
-#define DEFAULT_VALS true
+#define DEBUGGING false
+#define DEFAULT_VALS false
 
 using namespace std;
 typedef unsigned int uint;
@@ -134,29 +134,33 @@ int main( int argc, char * argv[] )
     // Create threads and fill tid/index map
     pthread_t threads[thread_cnt];    
     pthread_barrier_init(&barrier, NULL, thread_cnt);
-    if (DEFAULT_VALS) v = {1,2,3,4,5,6,7,8};
+    if (DEFAULT_VALS) v = {1,2,3,4,5,6,7,8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
     else for (int i = 0; i<element_cnt; i++) v.push_back(MIN + (rand() % static_cast<int>(MAX - MIN + 1)));
     if (DEBUGGING) printVector(v);
 
+    vector<int> thread_cnts = {1,2,4,8,12,16,24,32,40,48};
 
-    for(uint i = 0; i < thread_cnt; ++i) 
-    {
-        args_t args = { NULL };
+    //for(int j=0; j<thread_cnts.size();j++){
+        //thread_cnt = thread_cnts[j];
         clock_gettime(CLOCK_MONOTONIC, &t0);
-        if(pthread_create(&threads[i], NULL, thread_fn_pthread, &args)) {
-            exit(2);
+        for(uint i = 0; i < thread_cnt; ++i) 
+        {
+            args_t args = { NULL };        
+            if(pthread_create(&threads[i], NULL, thread_fn_pthread, &args)) {
+                exit(2);
+            }
+            ids.insert(pair<int, int>(threads[i], i));
         }
-        ids.insert(pair<int, int>(threads[i], i));
-    }
-    if (DEBUGGING) printMap(ids);
-    
-    for(uint i = 0; i < thread_cnt; ++i) if(pthread_join(threads[i], NULL)) exit(3);
-    
-    v = preScan2Scan(v, full_sum);
-    clock_gettime(CLOCK_MONOTONIC, &t1);
+        if (DEBUGGING) printMap(ids);
+        
+        for(uint i = 0; i < thread_cnt; ++i) if(pthread_join(threads[i], NULL)) exit(3);
+        
+        v = preScan2Scan(v, full_sum);
+        clock_gettime(CLOCK_MONOTONIC, &t1);
 
-    if (DEBUGGING) printVector(v);    
-    double time = (double) (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)/1e6;
-    cout << endl << time << " milliseconds" << endl;
+        if (DEBUGGING) printVector(v);    
+        double time = (double) (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)/1e6;
+        cout << endl << thread_cnt << "," << time << endl;
+    //}
     return 0;
 }
