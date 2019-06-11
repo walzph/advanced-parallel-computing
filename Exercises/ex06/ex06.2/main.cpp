@@ -23,7 +23,7 @@
 #include <vector>
 #include <bits/stdc++.h> 
 
-#define THREAD_CNT 2
+#define THREAD_CNT 1
 #define MIN 0 
 #define MAX 100
 #define DEBUGGING true
@@ -76,18 +76,20 @@ void* thread_fn_pthread(void *args)
 	
     // Scan algorithm 
     // Part I: Up-sweep (reduce)
+    int step = 0;
     int off = 1;
-    for (int d = v.size()/2; d > 0; d = d/2) {
+    for (int d = v.size()/2; d >0; d = d/2) {
         pthread_barrier_wait(&barrier);
-        for (int i = 0; i<((v.size()/2)/thread_cnt);i++) {
-            // TODO!!!
-            if (index<d) {
+        for (int i = 0; i<(d/thread_cnt);i++) {
+            // TODO!!
+            if (index<d && ((i*thread_cnt)<d || i==0)) {
                 int left  = (off*(2*index+1)-1)+i*thread_cnt*2;
                 int right = (off*(2*index+2)-1)+i*thread_cnt*2;
                 v[right] += v[left];
             } 
         }
         off *= 2;
+        step +=1;
     }
 
     if (index == 0) {
@@ -104,7 +106,7 @@ void* thread_fn_pthread(void *args)
         pthread_barrier_wait(&barrier);
         for (int i = 0; i<((v.size()/2)/thread_cnt);i++) {
             // TODO!!!
-            if (index<d) {
+            if (index<d && ((i*thread_cnt)<=(d/2) || i==0)) {
                 int left  = (off*(2*index+1)-1)+i*thread_cnt*2;;
                 int right = (off*(2*index+2)-1)+i*thread_cnt*2;;
                 int t = v[left];
