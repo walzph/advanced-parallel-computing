@@ -41,11 +41,6 @@ int thread_cnt;
 map<int, int> ids;
 pthread_barrier_t barrier;
 
-typedef struct
-{
-	uint* arg;
-} args_t;
-
 void printMap(map<int, int> m) {
     map<int, int>::iterator itr; 
     cout << "\nThe map is : \n";
@@ -68,12 +63,11 @@ void printVector(vector<int> v) {
     cout << *i << ' ';
 }
 
-void* thread_fn_pthread(void *args) 
+void* prescan(void *args) 
 {
     usleep(1);
     int tid = (int) pthread_self();
     int index = ids.find(tid)->second;
-    uint* arg = ((args_t*) args)->arg;
     
     // printf("Thread id %d has index %d\n", tid, index);
 	
@@ -85,10 +79,9 @@ void* thread_fn_pthread(void *args)
         pthread_barrier_wait(&barrier);
         int iSum = (d/thread_cnt) > 0?(d/thread_cnt):1;
         for (int i = 0; i<iSum;i++) {
-            // TODO!!
             if (index<d && ((i*thread_cnt)<d || i==0)) {
-                int left  = (off*(2*index+1)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;
-                int right = (off*(2*index+2)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;
+                int left  = (off*(2*index+1)-1)+(i*thread_cnt*off*2);
+                int right = (off*(2*index+2)-1)+(i*thread_cnt*off*2);
                 v[right] += v[left];
             } 
         }
@@ -110,17 +103,15 @@ void* thread_fn_pthread(void *args)
         pthread_barrier_wait(&barrier);
         int iSum = (d/thread_cnt) > 0?(d/thread_cnt):1;
         for (int i = 0; i<iSum;i++) {
-            // TODO!!!
             if (index<d && ((i*thread_cnt)<d || i==0)) {
-                int left  = (off*(2*index+1)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;;
-                int right = (off*(2*index+2)-1)+(i*thread_cnt*off*2);//i*thread_cnt*2;;
+                int left  = (off*(2*index+1)-1)+(i*thread_cnt*off*2);
+                int right = (off*(2*index+2)-1)+(i*thread_cnt*off*2);
                 int t = v[left];
                 v[left] = v[right];
                 v[right] += t;
             }
         }
     }
-    // pthread_barrier_wait(&barrier);
     return NULL;
 }
 
@@ -130,8 +121,8 @@ int main( int argc, char * argv[] )
 	// Parse arguments
 	const uint element_cnt = argc >= 2 ? atoi(argv[1]) : 8;
 	thread_cnt = argc >= 3 ? atoi(argv[2]) : THREAD_CNT;
-    // struct timespec t0, t1;
     
+    // Exit if element_cnt not pow of 2
     if (ceil(log2(element_cnt)) != floor(log2(element_cnt))) exit(3);
 
     // Create threads and fill tid/index map
@@ -139,35 +130,25 @@ int main( int argc, char * argv[] )
     pthread_barrier_init(&barrier, NULL, thread_cnt);
     if (DEFAULT_VALS) v = {1,2,3,4,5,6,7,8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
     else for (int i = 0; i<element_cnt; i++) v.push_back(MIN + (rand() % static_cast<int>(MAX - MIN + 1)));
+    
     if (DEBUGGING) printVector(v);
 
-    vector<int> thread_cnts = {1,2,4,8,12,16,24,32,40,48};
 
-    //for(int j=0; j<thread_cnts.size();j++){
-        //thread_cnt = thread_cnts[j];
-        // clock_gettime(CLOCK_MONOTONIC, &t0);
-        chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
-        for(uint i = 0; i < thread_cnt; ++i) 
-        {
-            args_t args = { NULL };        
-            if(pthread_create(&threads[i], NULL, thread_fn_pthread, &args)) {
-                exit(2);
-            }
-            ids.insert(pair<int, int>(threads[i], i));
-        }
-        if (DEBUGGING) printMap(ids);
-        
-        for(uint i = 0; i < thread_cnt; ++i) if(pthread_join(threads[i], NULL)) exit(3);
-        
-        v = preScan2Scan(v, full_sum);
-        // clock_gettime(CLOCK_MONOTONIC, &t1);
-        chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
+    chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+    for(uint i = 0; i < thread_cnt; ++i) 
+    {
+        if(pthread_create(&threads[i], NULL, prescan, NULL)) exit(2);
+        ids.insert(pair<int, int>(threads[i], i));
+    }
+    if (DEBUGGING) printMap(ids);
+    
+    for(uint i = 0; i < thread_cnt; ++i) if(pthread_join(threads[i], NULL)) exit(3);
+    
+    v = preScan2Scan(v, full_sum);
+    chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
 
-        if (DEBUGGING) printVector(v);    
-        // double time = (double) (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)/1e6;
-        // double time = (double) (t1.tv_nsec - t0.tv_nsec)/1e6;
-        chrono::duration<double, std::milli> time_span = t2 - t1;
-        cout << endl << thread_cnt << "," << time_span.count() << endl;
-    //}
+    if (DEBUGGING) printVector(v);    
+    chrono::duration<double, std::milli> time_span = t2 - t1;
+    cout << endl << thread_cnt << "," << time_span.count() << endl;
     return 0;
 }

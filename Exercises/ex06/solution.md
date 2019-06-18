@@ -29,7 +29,26 @@ We strongly agree with the authors work. In our opinion it is always a matter of
 
 
 ### 6.3 Parallel Prefix Sum Analysis
-
-
+```
+thread_cnt,default,membind=1,interleaved=4
+1,2680.48,2634.48,3071.54
+2,1869.26,1791.61,2054.74
+4,1534.49,1622.36,1840.58
+8,1290.23,1306.72,1604.86
+12,1576.24,1688.25,1712.32
+16,1222.73,1308.41,1533.75
+24,1317.87,1436.56,1481.54
+32,1222.38,1196.25,1398.56
+40,1267.12,1418.98,1451.64
+48,1212.6,1275,1366.95
+```
 
 ![Prefix Sum Performance](./chart.svg)
+
+The chart shows the overall prefix sum calculation performance per different thread counts (t).
+
+We see, that using two threads instead of sequential execution yields the highest relative speedup. 
+
+Furthermore, at the points $t=[12,24,40]$  we can see that the performance drops. This is due to the fact that the thread count is not a power of two as with the other values.
+
+Surprisingly, the interleaved numa configuration does not outperform the default or membind configuration. One explanation for this is, that although our parallel program acesses the array elements in an interleaved fashion (i.e. in the first run thread 0 accesses 0 and 1, thread 1 accesses 2 and 3, and so on), the `interleaved=4` configuration distributes the array in 4 whole slices to the different nodes. Clearly this subdivision does not bring any advantage to our algorithm. To further optimize performance to our algorithm we must distribute the array in in a more granular way. 
