@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/gschindler/Repos/CPU-Inference/third_party/mnist/example/main.cpp
+iostream
+-
+mnist/mnist_reader.hpp
+/Users/gschindler/Repos/CPU-Inference/third_party/mnist/example/mnist/mnist_reader.hpp
+
+/Users/gschindler/Repos/CPU-Inference/third_party/mnist/include/mnist/mnist_reader.hpp
+fstream
+-
+iostream
+-
+string
+-
+vector
+-
+cstdint
+-
+memory
+-
+mnist_reader_common.hpp
+/Users/gschindler/Repos/CPU-Inference/third_party/mnist/include/mnist/mnist_reader_common.hpp
+
+/Users/gschindler/Repos/CPU-Inference/third_party/mnist/include/mnist/mnist_reader_common.hpp
+
