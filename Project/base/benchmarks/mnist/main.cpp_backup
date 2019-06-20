@@ -1,0 +1,255 @@
+#include <iostream>
+#include "../../third_party/mnist/include/mnist/mnist_reader.hpp"
+#include "../../third_party/mnist/include/mnist/mnist_utils.hpp"
+#include "../../third_party/cnpy/cnpy.h"
+
+ /*
+  *
+  * Compile: g++ -o mnist main.cpp -L../../build/ -lcnpy --std=c++11
+  *
+  */
+
+#define MNIST_DATA_LOCATION "../../third_party/mnist/"
+
+// MLP configuration
+#define BATCH_SIZE 128
+#define FRAME_SIZE 28*28
+#define NUM_NEURONS 1024
+#define NUM_UNITS 10
+
+#include "../../third_party/Eigen/Eigen/Dense"
+typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RMatrixXf;
+
+void FullyConnected( float* InputTensor, float* WeightTensor, float* Output, int m, int n, int k ) {
+  RMatrixXf A = Eigen::Map<RMatrixXf>( InputTensor, m, n  );
+  RMatrixXf B = Eigen::Map<RMatrixXf>( WeightTensor, n, k );
+  RMatrixXf C( m, k );
+
+  C.noalias() += A * B;
+
+  Eigen::Map<RMatrixXf>( Output, m, k ) = C;
+  /*for(int i=0; i<m; ++i) {
+    for(int j=0; j<k; ++j) {
+      float result = 0.0;
+      for(int kk=0; kk<n; ++kk) {
+        result += InputTensor[i*n+kk] * WeightTensor[kk*k+j];
+        //if (Output[i*k+j]!=0) std::cout << "not null" << std::endl;
+      }
+      Output[i*k+j] = result;
+    }
+  }*/
+}
+
+void ReLU( float* InputTensor, int x, int y ) {
+  for( int i=0; i<x*y; ++i ) {
+    //InputTensor[i] = (InputTensor[i] < 0) ? 0 : InputTensor[i];
+  }
+}
+
+void Batchnormalization( float* InputTensor, int x, int y, float* beta, float* gamma, float* mean, float* variance ) {
+  for( int i=0; i<x; ++i ) {
+    for( int j=0; j<y; ++j ) {
+      InputTensor[i*y+j] = ((InputTensor[i*y+j] - mean[j])/variance[j])*gamma[j] + beta[j];
+    }
+  }
+}
+
+void Softmax( float* logits ) {
+  int numClass=10;
+  float max = 0.0;
+  float sum = 0.0;
+
+  float tmp[10];
+
+  for( int i = 0; i < numClass; i++ ) if (max < logits[i]) max = logits[i];
+  for( int i=0; i<numClass; ++i ) {
+    tmp[i] = exp(logits[i] - max);
+    sum += tmp[i];
+  }
+  for( int i=0; i<numClass; ++i ) {
+    tmp[i] /= sum;
+    std::cout << "prob[" << i << "] = " << tmp[i] << std::endl;
+  }
+}
+/*
+void SoftmaxReg::CalcProb (float *x) {
+	float max = 0.0;
+	float sum = 0.0;
+
+	for (int i = 0; i < numClass; i++) if (max < x[i]) max = x[i];
+	for (int i = 0; i < numClass; i++) {
+		x[i] = exp(x[i] - max);		// avoid overflow
+		sum += x[i];
+	}
+	for (int i = 0; i < numClass; i++)
+		x[i] /= sum;
+}*/
+
+void simply_copy( float* TensorA, float* TensorB, int x, int y ) {
+  for( int i=0; i<x*y; ++i ) {
+    TensorB[i] = TensorA[i];
+  }
+}
+
+void initialize_input( float* InputTensor, mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& dataset, int batch_size, int batch_id ) {
+  for( int frame_id=0; frame_id<batch_size; frame_id++ ) {
+    int frame_size = dataset.test_images.at(frame_id).size();
+    for( int pixel_id=0; pixel_id<frame_size; ++pixel_id ) {
+      InputTensor[frame_id*frame_size + pixel_id] = dataset.test_images.at(frame_id).at(pixel_id);
+    }
+  }
+}
+
+void normalize_pixel( float* InputTensor, int batch_size, int frame_size ) {
+  for( int pixel_id=0; pixel_id<batch_size*frame_size; ++pixel_id ) {
+    InputTensor[pixel_id] = InputTensor[pixel_id]/255;
+  }
+}
+
+void center_pixel_to_zero( float* InputTensor, int batch_size, int frame_size ) {
+  for( int pixel_id=0; pixel_id<batch_size*frame_size; ++pixel_id ) {
+    InputTensor[pixel_id] = InputTensor[pixel_id]*2-1;
+  }
+}
+
+int main(int argc, char* argv[]) {
+    // MNIST_DATA_LOCATION set by MNIST cmake config
+    std::cout << "MNIST data directory: " << MNIST_DATA_LOCATION << std::endl;
+
+    // Load MNIST data
+    mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t> dataset =
+        mnist::read_dataset<std::vector, std::vector, float, uint8_t>(MNIST_DATA_LOCATION);
+
+    //mnist::normalize_dataset(dataset);
+
+    std::cout << "Nbr of training images = " << dataset.training_images.size() << std::endl;
+    std::cout << "Nbr of training labels = " << dataset.training_labels.size() << std::endl;
+    std::cout << "Nbr of test images = " << dataset.test_images.size() << std::endl;
+    std::cout << "Nbr of test labels = " << dataset.test_labels.size() << std::endl;
+
+    /* Initialize all parameters from a numpy file */
+    cnpy::npz_t parameters_npz = cnpy::npz_load("../../trained_models/mnist-float32.npz");
+
+    assert( FRAME_SIZE == parameters_npz["fc0/W:0"].shape[0] );
+    assert( NUM_NEURONS == parameters_npz["fc0/W:0"].shape[1] );
+    float *WeightTensor0 = parameters_npz["fc0/W:0"].data<float>();
+    //float *bias0 = parameters_npz["fc0/b:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn0/beta:0"].shape[0] );
+    float *beta0 = parameters_npz["bn0/beta:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn0/gamma:0"].shape[0] );
+    float *gamma0 = parameters_npz["bn0/gamma:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn0/mean/EMA:0"].shape[0] );
+    float *mean0 = parameters_npz["bn0/mean/EMA:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn0/variance/EMA:0"].shape[0] );
+    float *variance0 = parameters_npz["bn0/variance/EMA:0"].data<float>();
+
+    assert( NUM_NEURONS == parameters_npz["fc1/W:0"].shape[0] );
+    assert( NUM_NEURONS == parameters_npz["fc1/W:0"].shape[1] );
+    float *WeightTensor1 = parameters_npz["fc1/W:0"].data<float>();
+    //float *bias1 = parameters_npz["fc1/b:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn1/beta:0"].shape[0] );
+    float *beta1 = parameters_npz["bn1/beta:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn1/gamma:0"].shape[0] );
+    float *gamma1 = parameters_npz["bn1/gamma:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn1/mean/EMA:0"].shape[0] );
+    float *mean1 = parameters_npz["bn1/mean/EMA:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn1/variance/EMA:0"].shape[0] );
+    float *variance1 = parameters_npz["bn1/variance/EMA:0"].data<float>();
+
+    assert( NUM_NEURONS == parameters_npz["fc2/W:0"].shape[0] );
+    assert( NUM_NEURONS == parameters_npz["fc2/W:0"].shape[1] );
+    float *WeightTensor2 = parameters_npz["fc2/W:0"].data<float>();
+    //float *bias2 = parameters_npz["fc2/b:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn2/beta:0"].shape[0] );
+    float *beta2 = parameters_npz["bn2/beta:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn2/gamma:0"].shape[0] );
+    float *gamma2 = parameters_npz["bn2/gamma:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn2/mean/EMA:0"].shape[0] );
+    float *mean2 = parameters_npz["bn2/mean/EMA:0"].data<float>();
+    assert( NUM_NEURONS == parameters_npz["bn2/variance/EMA:0"].shape[0] );
+    float *variance2 = parameters_npz["bn2/variance/EMA:0"].data<float>();
+
+    assert( NUM_NEURONS == parameters_npz["fc3/W:0"].shape[0] );
+    assert( NUM_UNITS == parameters_npz["fc3/W:0"].shape[1] );
+    float *WeightTensor3 = parameters_npz["fc3/W:0"].data<float>();
+    //float *bias3 = parameters_npz["fc3/b:0"].data<float>();
+
+    /* Initialize InputTensor with a batch of frames */
+    float *Input0 = (float*)malloc( BATCH_SIZE * FRAME_SIZE * sizeof(float) );
+    int batch_id = 0;
+    initialize_input( Input0, dataset, BATCH_SIZE, batch_id );
+    normalize_pixel( Input0, BATCH_SIZE, FRAME_SIZE );
+    center_pixel_to_zero( Input0, BATCH_SIZE, FRAME_SIZE );
+
+    for(int i=0; i<784; ++i) {
+      //std::cout << "Pixel Val=" << Input0[i] << std::endl;
+    }
+
+    // Layer 0
+    float *OutputTensor0 = (float*)malloc( BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    std::memset( OutputTensor0, 0.0, BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    FullyConnected( Input0, WeightTensor0, OutputTensor0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
+    Batchnormalization( OutputTensor0, BATCH_SIZE, NUM_NEURONS, beta0, gamma0, mean0, variance0 );
+    ReLU( OutputTensor0, BATCH_SIZE, NUM_NEURONS );
+
+    // Layer 1
+    float *Input1 = (float*)malloc( BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    simply_copy( Input1, OutputTensor0, BATCH_SIZE, NUM_NEURONS );
+    float *OutputTensor1 = (float*)malloc( BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    std::memset( OutputTensor1, 0.0, BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    FullyConnected( Input1, WeightTensor1, OutputTensor1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+    Batchnormalization( OutputTensor1, BATCH_SIZE, NUM_NEURONS, beta1, gamma1, mean1, variance1 );
+    ReLU( OutputTensor1, BATCH_SIZE, NUM_NEURONS );
+
+    // Layer 2
+    float *Input2 = (float*)malloc( BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    simply_copy( Input2, OutputTensor1, BATCH_SIZE, NUM_NEURONS );
+    float *OutputTensor2 = (float*)malloc( BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    std::memset( OutputTensor2, 0.0, BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    FullyConnected( Input2, WeightTensor2, OutputTensor2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+    Batchnormalization( OutputTensor2, BATCH_SIZE, NUM_NEURONS, beta2, gamma2, mean2, variance2 );
+    ReLU( OutputTensor2, BATCH_SIZE, NUM_NEURONS );
+
+    // Layer 3
+    float *Input3 = (float*)malloc( BATCH_SIZE * NUM_NEURONS * sizeof(float) );
+    simply_copy( Input3, OutputTensor2, BATCH_SIZE, NUM_NEURONS );
+    float *OutputTensor3 = (float*)malloc( BATCH_SIZE * NUM_UNITS * sizeof(float) );
+    std::memset( OutputTensor3, 0.0, BATCH_SIZE * NUM_UNITS * sizeof(float) );
+    FullyConnected( Input3, WeightTensor3, OutputTensor3, BATCH_SIZE, NUM_NEURONS, NUM_UNITS );
+
+    //for(int i=0; i<batch)
+    Softmax(OutputTensor3);
+    std::cout << "Label[0] = " << (int) dataset.test_labels.at(0) << std::endl;
+
+    Softmax(&OutputTensor3[10]);
+    std::cout << "Label[1] = " << (int) dataset.test_labels.at(1) << std::endl;
+
+    Softmax(&OutputTensor3[2*10]);
+    std::cout << "Label[2] = " << (int) dataset.test_labels.at(2) << std::endl;
+
+    Softmax(&OutputTensor3[3*10]);
+    std::cout << "Label[3] = " << (int) dataset.test_labels.at(3) << std::endl;
+
+    Softmax(&OutputTensor3[4*10]);
+    std::cout << "Label[4] = " << (int) dataset.test_labels.at(4) << std::endl;
+
+    Softmax(&OutputTensor3[5*10]);
+    std::cout << "Label[5] = " << (int) dataset.test_labels.at(5) << std::endl;
+
+    Softmax(&OutputTensor3[6*10]);
+    std::cout << "Label[6] = " << (int) dataset.test_labels.at(6) << std::endl;
+
+    //for(int i=0; i<BATCH_SIZE; ++i) std::cout << "Label = " << (int) dataset.test_labels.at(i) << std::endl;
+
+    // Release all allocated memory
+    free(Input0);
+    free(Input1);
+    free(Input2);
+    free(Input3);
+    free(OutputTensor0);
+    free(OutputTensor1);
+    free(OutputTensor2);
+    free(OutputTensor3);
+
+    return 0;
+}

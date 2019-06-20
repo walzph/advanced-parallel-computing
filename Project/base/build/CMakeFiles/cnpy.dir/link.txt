@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++  -std=c++11 -dynamiclib -Wl,-headerpad_max_install_names  -o libcnpy.dylib -install_name /Users/gschindler/Repos/CPU-Inference/build/libcnpy.dylib CMakeFiles/cnpy.dir/cnpy.cpp.o /usr/lib/libz.dylib 
