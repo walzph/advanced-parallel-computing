@@ -1,11 +1,13 @@
 #include <iostream>
 #include <time.h>       /* time */
 #include <chrono>
+#include <cmath>
 #include <mnist/mnist_reader.hpp>
 #include <mnist/mnist_utils.hpp>
 #include <cnpy.h>
 // Sparse OPs
 #include "sparse_ops.h"
+#include "sparse.hpp"
 
 #include <math.h>       /* sqrt */
 
@@ -361,10 +363,27 @@ void center_pixel_to_zero( float* InputTensor, int batch_size, int frame_size ) 
   }
 }
 
+void _mat_cmp(float* a, float* b, uint line)
+{
+	for(uint i = 0; i < NUM_NEURONS; ++i) for(uint j = 0; j < BATCH_SIZE; ++j)
+	{
+		float val_a = a[i*BATCH_SIZE + j];
+		float val_b = b[i*BATCH_SIZE + j];
+
+		if(abs(val_b - val_a) > 0.0001)
+		{
+			printf("[@%d] %d, %d: %f != %f\n", line, i, j, val_a, val_b);
+			asm("int $3");
+			exit(-1);
+		}
+	}
+}
+#define mat_cmp(a, b) _mat_cmp(a, b, __LINE__)
+
 int main(int argc, char* argv[]) {
     std::cout << "[INFO] MNIST data directory: " << MNIST_DATA_LOCATION << std::endl;
     std::chrono::time_point<std::chrono::system_clock> start, end;
-  	std::chrono::duration<double> elapsed_seconds;
+    std::chrono::duration<double> elapsed_seconds;
     double overall_time=0.0;
 
     // Load MNIST data
@@ -396,7 +415,11 @@ int main(int argc, char* argv[]) {
     float *WeightTensor0T = (float*)malloc( NUM_NEURONS * FRAME_SIZE * sizeof(float) );
     transposeMatrix( WeightTensor0, WeightTensor0T, FRAME_SIZE, NUM_NEURONS );
     uint16_t** SparseList0=NULL;
+#ifndef __NEW_SPARSE__
     createSparseList( WeightTensor0T, SparseList0, Wp0, Wn0, FRAME_SIZE, NUM_NEURONS);
+#else
+    unique_ptr<sparse_list_tuple[]> sparse_lists_0 = createSparseList<NUM_NEURONS, FRAME_SIZE>(WeightTensor0T, Wp0, Wn0);
+#endif
     free( WeightTensor0T );
     assert( NUM_NEURONS == parameters_npz["fc0/b:0"].shape[0] );
     //float *bias0 = parameters_npz["fc0/b:0"].data<float>();
@@ -426,7 +449,11 @@ int main(int argc, char* argv[]) {
     float *WeightTensor1T = (float*)malloc( NUM_NEURONS * NUM_NEURONS * sizeof(float) );
     transposeMatrix( WeightTensor1, WeightTensor1T, NUM_NEURONS, NUM_NEURONS );
     uint16_t** SparseList1=NULL;
+#ifndef __NEW_SPARSE__
     createSparseList( WeightTensor1T, SparseList1, Wp1, Wn1, NUM_NEURONS, NUM_NEURONS);
+#else
+    unique_ptr<sparse_list_tuple[]> sparse_lists_1 = createSparseList<NUM_NEURONS, NUM_NEURONS>(WeightTensor1T, Wp1, Wn1);
+#endif
     free( WeightTensor1T );
 
     //createSparseList( WeightTensor1 )
@@ -457,7 +484,11 @@ int main(int argc, char* argv[]) {
     float *WeightTensor2T = (float*)malloc( NUM_NEURONS * NUM_NEURONS * sizeof(float) );
     transposeMatrix( WeightTensor2, WeightTensor2T, NUM_NEURONS, NUM_NEURONS );
     uint16_t** SparseList2=NULL;
+#ifndef __NEW_SPARSE__
     createSparseList( WeightTensor2T, SparseList2, Wp2, Wn2, NUM_NEURONS, NUM_NEURONS);
+#else
+    unique_ptr<sparse_list_tuple[]> sparse_lists_2 = createSparseList<NUM_NEURONS, NUM_NEURONS>(WeightTensor2T, Wp2, Wn2);
+#endif
     free( WeightTensor1T );
     assert( NUM_NEURONS == parameters_npz["fc2/b:0"].shape[0] );
     //float *bias2 = parameters_npz["fc2/b:0"].data<float>();
@@ -531,37 +562,80 @@ int main(int argc, char* argv[]) {
       //FullyConnected( Input0, WeightTensor0, OutputTensor0, bias0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
       //FcBnReLUAVX2( Input0Tint8, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS, 8 );
       //SparseDotProduct( Input0T, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
+#ifndef __NEW_SPARSE__
       SparseDotProductAVX2( Input0T, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
+#else
+      unique_ptr<float[]> out_tensor_0 = sparseMatrixMultiply<NUM_NEURONS, BATCH_SIZE>(Input0T, sparse_lists_0.get(), Wp0, Wn0);
+#endif
+
+      //mat_cmp(OutputTensor0T, out_tensor_0.get());
+
       //transposeMatrix( OutputTensor0T, OutputTensor0, NUM_NEURONS, BATCH_SIZE );
       //BatchnormalizationCMO( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, beta0, gamma0, mean0, variance0 );
       //BatchnormalizationCMOZeta( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, beta0, mean0, zeta0 );
+#ifndef __NEW_SPARSE__
       zero_count += (unsigned long long int) ReLU( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, 0.0 /*0.25*/, 8 );
+#else
+      zero_count += ReLU(out_tensor_0.get(), BATCH_SIZE, NUM_NEURONS, 0.0, 8);
+#endif
       activation_count += (unsigned long long int) BATCH_SIZE * NUM_NEURONS;
+
+      //mat_cmp(OutputTensor0T, out_tensor_0.get());
 
       // Layer 1
       //FullyConnected( OutputTensor0, WeightTensor1, OutputTensor1, bias1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
       //transposeMatrix( OutputTensor0, OutputTensor0T, BATCH_SIZE, NUM_NEURONS );
       //SAFcBnReLUAVX2( OutputTensor0Tint8, indices, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS, 8 );
+#ifndef __NEW_SPARSE__
       SparseDotProductAVX2( OutputTensor0T, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+#else
+      unique_ptr<float[]> out_tensor_1 = sparseMatrixMultiply<NUM_NEURONS, BATCH_SIZE>(out_tensor_0.get(), sparse_lists_1.get(), Wp1, Wn1);
+#endif
+
+      //mat_cmp(OutputTensor1T, out_tensor_1.get());
+
       //SASparseDotProduct( SAOutputTensor0T, indices, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
       //transposeMatrix( OutputTensor1T, OutputTensor1, NUM_NEURONS, BATCH_SIZE );
       //BatchnormalizationCMOZeta( OutputTensor1T, BATCH_SIZE, NUM_NEURONS, beta1, mean1, zeta1 );
       //BatchnormalizationCMO( OutputTensor1T, BATCH_SIZE, NUM_NEURONS, beta1, gamma1, mean1, variance1 );
+#ifndef __NEW_SPARSE__
       zero_count += (unsigned long long int) ReLU( OutputTensor1T, OutputTensor1Tint8, BATCH_SIZE, NUM_NEURONS, 0.0 /*0.32*/, 8 );
+#else
+      zero_count += (unsigned long long int) ReLU(out_tensor_1.get(), OutputTensor1Tint8, BATCH_SIZE, NUM_NEURONS, 0.0, 8);
+#endif
       activation_count += (unsigned long long int) BATCH_SIZE * NUM_NEURONS;
+
+      //mat_cmp(OutputTensor1T, out_tensor_1.get());
 
       // Layer 2
       //FullyConnected( OutputTensor1, WeightTensor2, OutputTensor2, bias2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
       //transposeMatrix( OutputTensor1, OutputTensor1T, BATCH_SIZE, NUM_NEURONS );
+#ifndef __NEW_SPARSE__
       SparseDotProductAVX2( OutputTensor1T, SparseList2, OutputTensor2T, Wp2, Wn2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+#else
+      unique_ptr<float[]> out_tensor_2 = sparseMatrixMultiply<NUM_NEURONS, BATCH_SIZE>(out_tensor_1.get(), sparse_lists_2.get(), Wp2, Wn2);
+#endif
+
+      //mat_cmp(OutputTensor2T, out_tensor_2.get());
+
       //FcBnReLUAVX2( OutputTensor1Tint8, SparseList2, OutputTensor2T, Wp2, Wn2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS, 8 );
       //transposeMatrix( OutputTensor2T, OutputTensor2, NUM_NEURONS, BATCH_SIZE );
-      BatchnormalizationCMOZeta( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, mean2, zeta2 );
+      //BatchnormalizationCMOZeta( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, mean2, zeta2 );
       //BatchnormalizationCMO( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, gamma2, mean2, variance2 );
+#ifndef __NEW_SPARSE__
       zero_count += (unsigned long long int) ReLU( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, 0.0, 32 );
+#else
+      zero_count += (unsigned long long int) ReLU(out_tensor_2.get(), BATCH_SIZE, NUM_NEURONS, 0.0, 32);
+#endif
       activation_count += (unsigned long long int) BATCH_SIZE * NUM_NEURONS;
 
+      //mat_cmp(OutputTensor2T, out_tensor_2.get());
+
+#ifndef __NEW_SPARSE__
       transposeMatrix( OutputTensor2T, OutputTensor2, NUM_NEURONS, BATCH_SIZE );
+#else
+      transposeMatrix(out_tensor_2.get(), OutputTensor2, NUM_NEURONS, BATCH_SIZE);
+#endif
       // Layer 3
       FullyConnected( OutputTensor2, WeightTensor3, logits, bias3, BATCH_SIZE, NUM_NEURONS, NUM_UNITS );
       Softmax( logits, BATCH_SIZE, NUM_UNITS );
