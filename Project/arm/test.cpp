@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cmath>
+#include <iomanip>
 
 #include <cnpy.h>
 #include <mnist/mnist_reader.hpp>
@@ -7,6 +9,24 @@
 #include "mat.hpp"
 #include "sparse.hpp"
 #include "util.hpp"
+
+using std::copy;
+
+template<uint batch_size>
+unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id);
+
+template<uint batch_size, uint frame_size>
+void normalize(float* buf);
+
+template<uint n, uint m>
+void print_frame(float* frame)
+{
+	for(uint i = 0; i < n; ++i)
+	{
+		for(uint j = 0; j < m; ++j) std::cout << std::setw(4) << frame[i * m + j] << ' ';
+		std::cout << '\n';
+	}
+}
 
 int main(int argc, char* argv[])
 {
@@ -112,4 +132,42 @@ int main(int argc, char* argv[])
 
 	assert(num_units == parameters_npz["fc3/b:0"].shape[0]);
 	float* bias_3 = parameters_npz["fc3/b:0"].data<float>();
+
+	uint n_test_set = dataset.test_images.size();
+
+	for(uint batch = 0; batch < 1 /*n_test_set / batch_size*/; ++batch)
+	{
+		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
+		print_frame<28 * batch_size, 28>(input.get());
+		normalize<batch_size, frame_size>(input.get());
+	}
+}
+
+template<uint batch_size>
+unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint offset)
+{
+	unique_ptr<float[]> out(new float[batch_size * frame_size]);
+	for(uint i = 0; i < batch_size; ++i)
+	{
+		assert(data.test_images.at(offset * batch_size + i).size() == frame_size);
+		copy(data.test_images.at(offset * batch_size + i).begin(), data.test_images.at(i).end(),
+		     out.get() + i * frame_size);
+	}
+	return out;
+}
+
+template<uint batch_size, uint frame_size>
+void normalize(float* buf)
+{
+	for(float* ptr = buf; ptr < buf + batch_size * frame_size; ++ptr)
+	{
+		if(!(*ptr >= 0 && *ptr <= 255))
+		{
+			std::cout << batch_size * frame_size << '\n';
+			std::cout << ptr - buf << '\n';
+			std::cout << *ptr << '\n';
+		}
+		assert(*ptr >= 0 && *ptr <= 255);
+		*ptr = *ptr / 255;
+	}
 }
