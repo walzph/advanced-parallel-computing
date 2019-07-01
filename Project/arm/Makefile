@@ -6,7 +6,8 @@ LDFLAGS += -lcnpy
 OBJ := test.o mat.o sparse.o
 DEP := $(patsubst %.o,%.d,$(OBJ))
 
-build: main main_avx test
+#build: main main_avx test
+build: test
 
 rebuild: clean build
 
@@ -17,8 +18,8 @@ ifeq ($(MAKECMDGOALS),clean)
 endif
 
 run: build
-	./main_avx
-	./main
+#	./main_avx
+#	./main
 	./test
 
 main_avx: main.cpp sparse_ops.h

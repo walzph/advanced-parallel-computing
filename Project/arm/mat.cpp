@@ -55,3 +55,4 @@ template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, fl
 
 template unique_ptr<float[]> transpose<frame_size, num_neurons>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, num_neurons>(float* a);
+template unique_ptr<float[]> transpose<batch_size, frame_size>(float* a);

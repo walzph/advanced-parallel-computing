@@ -18,16 +18,6 @@ unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vect
 template<uint batch_size, uint frame_size>
 void normalize(float* buf);
 
-template<uint n, uint m>
-void print_frame(float* frame)
-{
-	for(uint i = 0; i < n; ++i)
-	{
-		for(uint j = 0; j < m; ++j) std::cout << std::setw(4) << frame[i * m + j] << ' ';
-		std::cout << '\n';
-	}
-}
-
 int main(int argc, char* argv[])
 {
 	mnist::MNIST_dataset<vector, vector<float>, uint8_t> dataset =
@@ -138,8 +128,15 @@ int main(int argc, char* argv[])
 	for(uint batch = 0; batch < 1 /*n_test_set / batch_size*/; ++batch)
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
-		print_frame<28 * batch_size, 28>(input.get());
 		normalize<batch_size, frame_size>(input.get());
+		unique_ptr<float[]> input_t = transpose<batch_size, frame_size>(input.get());
+
+		unique_ptr<float[]> out_tensor_0 = sparseMatrixMultiply<num_neurons, batch_size>(
+		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
+		unique_ptr<float[]> out_tensor_1 = sparseMatrixMultiply<num_neurons, batch_size>(
+		    input_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
+		unique_ptr<float[]> out_tensor_2 = sparseMatrixMultiply<num_neurons, batch_size>(
+		    input_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
 	}
 }
 
