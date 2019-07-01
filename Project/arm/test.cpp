@@ -1,24 +1,12 @@
 #include <cmath>
-#include <iostream>
-#include <memory>
-#include <vector>
 
 #include <cnpy.h>
 #include <mnist/mnist_reader.hpp>
 #include <mnist/mnist_utils.hpp>
 
-typedef unsigned int uint;
-#define log(var) std::cout << #var "=" << var << "\n";
-
-using std::unique_ptr;
-using std::vector;
-
 #include "mat.hpp"
 #include "sparse.hpp"
-
-const uint batch_size  = 64;
-const uint frame_size  = 28 * 28;
-const uint num_neurons = 1024;
+#include "util.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -27,8 +15,8 @@ int main(int argc, char* argv[])
 
 	cnpy::npz_t parameters_npz = cnpy::npz_load("trained_models/mnist-t40-final.npz");
 
-	assert(parameters_npz["fc0/W:0"].shape[0] == frame_size);
-	assert(parameters_npz["fc0/W:0"].shape[1] == num_neurons);
+	assert(frame_size == parameters_npz["fc0/W:0"].shape[0]);
+	assert(num_neurons == parameters_npz["fc0/W:0"].shape[1]);
 
 	float* weight_tensor_0 = parameters_npz["fc0/W:0"].data<float>();
 
@@ -43,4 +31,85 @@ int main(int argc, char* argv[])
 
 	unique_ptr<sparse_list_tuple[]> sparse_lists_0 =
 	    createSparseList<num_neurons, frame_size>(weight_tensor_0_t.get(), weight_pos_0, weight_neg_0);
+
+	assert(num_neurons == parameters_npz["fc0/b:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn0/beta:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn0/gamma:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn0/mean/EMA:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn0/variance/EMA:0"].shape[0]);
+
+	float* bias_0     = parameters_npz["fc0/b:0"].data<float>();
+	float* beta_0     = parameters_npz["bn0/beta:0"].data<float>();
+	float* gamma_0    = parameters_npz["bn0/gamma:0"].data<float>();
+	float* mean_0     = parameters_npz["bn0/mean/EMA:0"].data<float>();
+	float* variance_0 = parameters_npz["bn0/variance/EMA:0"].data<float>();
+
+
+	assert(num_neurons == parameters_npz["fc1/W:0"].shape[0]);
+	assert(num_neurons == parameters_npz["fc1/W:0"].shape[1]);
+
+	float* weight_tensor_1 = parameters_npz["fc1/W:0"].data<float>();
+
+	float weight_pos_1 = *parameters_npz["fc1/Wp:0"].data<float>();
+	float weight_neg_1 = -(*parameters_npz["fc1/Wn:0"].data<float>());
+
+	assert(fabs(weight_pos_1 - 0.8800015) < 0.00001);
+	assert(fabs(weight_neg_1 - -1.1117288) < 0.00001);
+
+	ternarize<num_neurons, num_neurons>(weight_tensor_1, weight_pos_1, weight_neg_1, 0.1f);
+	unique_ptr<float[]> weight_tensor_1_t = transpose<num_neurons, num_neurons>(weight_tensor_1);
+
+	unique_ptr<sparse_list_tuple[]> sparse_lists_1 =
+	    createSparseList<num_neurons, num_neurons>(weight_tensor_1_t.get(), weight_pos_1, weight_neg_1);
+
+	assert(num_neurons == parameters_npz["fc1/b:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn1/beta:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn1/gamma:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn1/mean/EMA:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn1/variance/EMA:0"].shape[0]);
+
+	float* bias_1     = parameters_npz["fc1/b:0"].data<float>();
+	float* beta_1     = parameters_npz["bn1/beta:0"].data<float>();
+	float* gamma_1    = parameters_npz["bn1/gamma:0"].data<float>();
+	float* mean_1     = parameters_npz["bn1/mean/EMA:0"].data<float>();
+	float* variance_1 = parameters_npz["bn1/variance/EMA:0"].data<float>();
+
+
+	assert(num_neurons == parameters_npz["fc2/W:0"].shape[0]);
+	assert(num_neurons == parameters_npz["fc2/W:0"].shape[1]);
+
+	float* weight_tensor_2 = parameters_npz["fc2/W:0"].data<float>();
+
+	float weight_pos_2 = *parameters_npz["fc2/Wp:0"].data<float>();
+	float weight_neg_2 = -(*parameters_npz["fc2/Wn:0"].data<float>());
+
+	assert(fabs(weight_pos_2 - 0.86801404) < 0.00001);
+	assert(fabs(weight_neg_2 - -1.119899) < 0.00001);
+
+	ternarize<num_neurons, num_neurons>(weight_tensor_2, weight_pos_2, weight_neg_2, 0.1f);
+	unique_ptr<float[]> weight_tensor_2_t = transpose<num_neurons, num_neurons>(weight_tensor_2);
+
+	unique_ptr<sparse_list_tuple[]> sparse_lists_2 =
+	    createSparseList<num_neurons, num_neurons>(weight_tensor_2_t.get(), weight_pos_2, weight_neg_2);
+
+	assert(num_neurons == parameters_npz["fc2/b:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn2/beta:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn2/gamma:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn2/mean/EMA:0"].shape[0]);
+	assert(num_neurons == parameters_npz["bn2/variance/EMA:0"].shape[0]);
+
+	float* bias_2     = parameters_npz["fc2/b:0"].data<float>();
+	float* beta_2     = parameters_npz["bn2/beta:0"].data<float>();
+	float* gamma_2    = parameters_npz["bn2/gamma:0"].data<float>();
+	float* mean_2     = parameters_npz["bn2/mean/EMA:0"].data<float>();
+	float* variance_2 = parameters_npz["bn2/variance/EMA:0"].data<float>();
+
+
+	assert(num_neurons == parameters_npz["fc3/W:0"].shape[0]);
+	assert(num_units == parameters_npz["fc3/W:0"].shape[1]);
+
+	float* weight_tensor_3 = parameters_npz["fc3/W:0"].data<float>();
+
+	assert(num_units == parameters_npz["fc3/b:0"].shape[0]);
+	float* bias_3 = parameters_npz["fc3/b:0"].data<float>();
 }

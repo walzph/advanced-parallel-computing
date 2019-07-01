@@ -1,21 +1,28 @@
 .PHONY: build clean rebuild test
 
-build: main main_avx
+CFLAGS+=-O3 --std=c++14 -Imnist/include
+LDFLAGS+=-lcnpy
+
+build: main main_avx test
 
 rebuild: clean build
 
 clean:
-	rm -f main main_avx
+	rm -f main main_avx test mat.o sparse.o
 
 run: rebuild
 	./main_avx
 	./main
-
-test: test.cpp sparse.hpp
-		$(CXX) $(CFLAGS) $(LDFLAGS) -O3 --std=c++14 -Imnist/include -lcnpy -o $@ $<
+	./test
 
 main_avx: main.cpp sparse_ops.h
-	$(CXX) $(CFLAGS) $(LDFLAGS) -O3 --std=c++14 -mavx2 -mfma -Imnist/include -lcnpy -o $@ $<
+	$(CXX) $(CFLAGS) $(LDFLAGS) -mavx2 -mfma -o $@ $<
 
-main: main.cpp sparse.hpp
-	$(CXX) $(CFLAGS) $(LDFLAGS) -D__NEW_SPARSE__ -O3 --std=c++14 -Imnist/include -lcnpy -o $@ $<
+main: main.cpp mat.o sparse.o
+	$(CXX) $(CFLAGS) $(LDFLAGS) -D__NEW_SPARSE__ -o $@ $^
+
+test: test.cpp mat.o sparse.o
+	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+%.o: %.cpp %.hpp
+	$(CXX) $(CFLAGS) -c $<
