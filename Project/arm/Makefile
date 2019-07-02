@@ -1,6 +1,6 @@
 .PHONY: build clean rebuild run
 
-CFLAGS += -O3 --std=c++14 -Imnist/include
+CFLAGS += -Wall --std=c++14 -Imnist/include
 LDFLAGS += -lcnpy
 
 OBJ := test.o mat.o sparse.o

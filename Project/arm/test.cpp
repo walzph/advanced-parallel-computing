@@ -125,19 +125,29 @@ int main(int argc, char* argv[])
 
 	uint n_test_set = dataset.test_images.size();
 
-	for(uint batch = 0; batch < 1 /*n_test_set / batch_size*/; ++batch)
+	for(uint batch = 0; batch < n_test_set / batch_size; ++batch)
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
 		normalize<batch_size, frame_size>(input.get());
 		unique_ptr<float[]> input_t = transpose<batch_size, frame_size>(input.get());
 
-		unique_ptr<float[]> out_tensor_0 = sparseMatrixMultiply<num_neurons, batch_size>(
+		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
-		unique_ptr<float[]> out_tensor_1 = sparseMatrixMultiply<num_neurons, batch_size>(
-		    input_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
-		unique_ptr<float[]> out_tensor_2 = sparseMatrixMultiply<num_neurons, batch_size>(
-		    input_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
+		// TODO: batch_normalization & ReLU
+		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
+		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
+		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
+		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
+
+		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
+
+		// TODO: fully connected & softmax
+		// TODO: get_accuracy
+
+		printf(".");
+		fflush(stdout);
 	}
+	printf("\n");
 }
 
 template<uint batch_size>
@@ -146,9 +156,9 @@ unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vect
 	unique_ptr<float[]> out(new float[batch_size * frame_size]);
 	for(uint i = 0; i < batch_size; ++i)
 	{
-		assert(data.test_images.at(offset * batch_size + i).size() == frame_size);
-		copy(data.test_images.at(offset * batch_size + i).begin(), data.test_images.at(i).end(),
-		     out.get() + i * frame_size);
+		uint idx = offset * batch_size + i;
+		assert(data.test_images.at(idx).size() == frame_size);
+		copy(data.test_images.at(idx).begin(), data.test_images.at(idx).end(), out.get() + i * frame_size);
 	}
 	return out;
 }
@@ -158,12 +168,6 @@ void normalize(float* buf)
 {
 	for(float* ptr = buf; ptr < buf + batch_size * frame_size; ++ptr)
 	{
-		if(!(*ptr >= 0 && *ptr <= 255))
-		{
-			std::cout << batch_size * frame_size << '\n';
-			std::cout << ptr - buf << '\n';
-			std::cout << *ptr << '\n';
-		}
 		assert(*ptr >= 0 && *ptr <= 255);
 		*ptr = *ptr / 255;
 	}
