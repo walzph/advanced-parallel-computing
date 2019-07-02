@@ -1,5 +1,6 @@
 #include "mat.hpp"
 
+#include <cassert>
 #include <cmath>
 
 template<uint m, uint n>
@@ -49,6 +50,16 @@ unique_ptr<float[]> transpose(float* a)
 	return t;
 }
 
+template<uint batch_size, uint frame_size>
+void normalize(float* buf)
+{
+	for(float* ptr = buf; ptr < buf + batch_size * frame_size; ++ptr)
+	{
+		assert(*ptr >= 0 && *ptr <= 255);
+		*ptr = *ptr / 255;
+	}
+}
+
 /* explicit template instantiations */
 template void ternarize<frame_size, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
 template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
@@ -57,3 +68,5 @@ template unique_ptr<float[]> transpose<frame_size, num_neurons>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, num_neurons>(float* a);
 template unique_ptr<float[]> transpose<batch_size, frame_size>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, batch_size>(float* a);
+
+template void normalize<batch_size, frame_size>(float* buf);

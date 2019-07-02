@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <iomanip>
 
@@ -14,9 +15,6 @@ using std::copy;
 
 template<uint batch_size>
 unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id);
-
-template<uint batch_size, uint frame_size>
-void normalize(float* buf);
 
 int main(int argc, char* argv[])
 {
@@ -161,14 +159,4 @@ unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vect
 		copy(data.test_images.at(idx).begin(), data.test_images.at(idx).end(), out.get() + i * frame_size);
 	}
 	return out;
-}
-
-template<uint batch_size, uint frame_size>
-void normalize(float* buf)
-{
-	for(float* ptr = buf; ptr < buf + batch_size * frame_size; ++ptr)
-	{
-		assert(*ptr >= 0 && *ptr <= 255);
-		*ptr = *ptr / 255;
-	}
 }
