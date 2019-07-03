@@ -19,6 +19,41 @@ unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vect
 template<uint batch_size>
 unique_ptr<int[]> init_labels(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id);
 
+template<uint m, uint n>
+void print_frame(float* frame)
+{
+	for(uint i = 0; i < m; ++i)
+	{
+		for(uint j = 0; j < n; ++j) printf(frame[i * n + j] == 0 ? " " : "#");
+		printf("\n");
+	}
+}
+
+template<uint n, typename T>
+void print_list(T* list)
+{
+	std::cout << "[ ";
+	for(uint i = 0; i < n; ++i) std::cout << list[i] << ", ";
+	std::cout << "]\n";
+}
+
+template<uint n, typename T>
+uint max_id(T* list)
+{
+	uint id = 0;
+	T max   = *list;
+	for(uint i = 1; i < n; ++i)
+	{
+		T value = list[i];
+		if(value > max)
+		{
+			id  = i;
+			max = value;
+		};
+	}
+	return id;
+}
+
 int main(int argc, char* argv[])
 {
 	mnist::MNIST_dataset<vector, vector<float>, uint8_t> dataset =
@@ -129,13 +164,17 @@ int main(int argc, char* argv[])
 
 	uint n_test_set = dataset.test_images.size();
 
-	uint num_batches = n_test_set / batch_size;
-	uint zero_count = 0;
-	float accuracy;
+	uint num_batches = 1; // n_test_set / batch_size;
+	uint zero_count  = 0;
+	float accuracy   = 0;
+
 	for(uint batch = 0; batch < num_batches; ++batch)
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
-		unique_ptr<int[]> labels = init_labels<batch_size>(dataset, batch);
+		unique_ptr<int[]> labels  = init_labels<batch_size>(dataset, batch);
+
+		print_frame<28 * batch_size, 28>(input.get());
+		print_list<batch_size>(labels.get());
 
 		normalize<batch_size, frame_size>(input.get());
 		unique_ptr<float[]> input_t = transpose<frame_size, batch_size>(input.get());
@@ -143,19 +182,19 @@ int main(int argc, char* argv[])
 		// Fist Layer
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
-		BatchnormalizationCMOZeta<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, mean_0, zeta_0.get());
+		batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
 
 		// Second Layer
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
-		BatchnormalizationCMOZeta<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, mean_1, zeta_1.get());
+		batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
 
 		// Third Layer
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
-		BatchnormalizationCMOZeta<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, mean_2, zeta_2.get());
+		batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
 
 		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
@@ -163,6 +202,12 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_3);
 
 		Softmax<batch_size, num_units>(out_tensor_3.get());
+
+		for(uint i = 0; i < batch_size; ++i)
+		{
+			print_list<num_units>(out_tensor_3.get() + i * batch_size);
+			printf("==> %d\n", max_id<num_units>(out_tensor_3.get() + i * batch_size));
+		}
 
 		int accuracy_batch = get_accuracy<batch_size, num_units>(out_tensor_3.get(), labels.get()) * 100;
 		accuracy += accuracy_batch;
@@ -192,8 +237,6 @@ unique_ptr<int[]> init_labels(const mnist::MNIST_dataset<std::vector, std::vecto
 {
 	unique_ptr<int[]> out(new int[batch_size * frame_size]);
 	for(int frame_id = 0; frame_id < batch_size; frame_id++)
-	{ 
-		out[frame_id] = (int) data.test_labels.at(id * batch_size + frame_id); 
-	}
+		out[frame_id] = data.test_labels.at(id * batch_size + frame_id);
 	return out;
 }

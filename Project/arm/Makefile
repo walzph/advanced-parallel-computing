@@ -7,8 +7,8 @@ OBJ := test.o mat.o sparse.o
 SRC_DEP := $(patsubst %.o,%.d,$(OBJ))
 DEP_DEP := $(patsubst %.o,%.d.d,$(OBJ))
 
-build: main main_avx test
-# build: test
+#build: main main_avx test
+build: test
 
 rebuild: clean build
 
