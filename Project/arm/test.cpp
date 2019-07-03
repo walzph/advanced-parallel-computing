@@ -87,6 +87,7 @@ void print_sparse_list(sparse_list_tuple* tuple)
 
 int main(int argc, char* argv[])
 {
+#ifdef TEST
 	float input[] { 3, 7 };
 	print_mat<frame_size, batch_size>(input);
 
@@ -116,8 +117,7 @@ int main(int argc, char* argv[])
 	unique_ptr<float[]> _out_tensor_1 = mul<num_units, num_neurons, batch_size>(weight_tensor_1_t, out_tensor_0.get());
 	print_mat<num_units, batch_size>(out_tensor_1.get());
 	print_mat<num_units, batch_size>(_out_tensor_1.get());
-
-#ifdef IGNORE
+#else
 	mnist::MNIST_dataset<vector, vector<float>, uint8_t> dataset =
 	    mnist::read_dataset<vector, vector, float, uint8_t>("./mnist/");
 
@@ -168,8 +168,8 @@ int main(int argc, char* argv[])
 	ternarize<num_neurons, num_neurons>(weight_tensor_1, weight_pos_1, weight_neg_1, 0.1f);
 	unique_ptr<float[]> weight_tensor_1_t = transpose<num_neurons, num_neurons>(weight_tensor_1);
 
-	// unique_ptr<sparse_list_tuple[]> sparse_lists_1 =
-	//     createSparseList<num_neurons, num_neurons>(weight_tensor_1_t.get(), weight_pos_1, weight_neg_1);
+	unique_ptr<sparse_list_tuple[]> sparse_lists_1 =
+	    createSparseList<num_neurons, num_neurons>(weight_tensor_1_t.get(), weight_pos_1, weight_neg_1);
 
 	assert(num_neurons == parameters_npz["fc1/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn1/beta:0"].shape[0]);
@@ -199,8 +199,8 @@ int main(int argc, char* argv[])
 	ternarize<num_neurons, num_neurons>(weight_tensor_2, weight_pos_2, weight_neg_2, 0.1f);
 	unique_ptr<float[]> weight_tensor_2_t = transpose<num_neurons, num_neurons>(weight_tensor_2);
 
-	// unique_ptr<sparse_list_tuple[]> sparse_lists_2 =
-	//     createSparseList<num_neurons, num_neurons>(weight_tensor_2_t.get(), weight_pos_2, weight_neg_2);
+	unique_ptr<sparse_list_tuple[]> sparse_lists_2 =
+	    createSparseList<num_neurons, num_neurons>(weight_tensor_2_t.get(), weight_pos_2, weight_neg_2);
 
 	assert(num_neurons == parameters_npz["fc2/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn2/beta:0"].shape[0]);
