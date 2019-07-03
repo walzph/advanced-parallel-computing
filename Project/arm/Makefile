@@ -33,7 +33,7 @@ test: $(OBJ)
 
 %:
 	@echo "LINK $^ ==> $@"
-	@$(CXX) $(LDFLAGS) -o $@ $^
+	@$(CXX) -o $@ $^ $(LDFLAGS)
 
 %.d: %.cpp
 	@echo "scanning $< dependencies"
