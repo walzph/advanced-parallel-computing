@@ -12,7 +12,7 @@ unique_ptr<sparse_list_tuple[]> createSparseList(const float* weight_tensor, con
 	unique_ptr<sparse_list_tuple[]> out(new sparse_list_tuple[m]);
 
 	uint cntr_pos, cntr_neg;
-	unique_ptr<uint[]> buf_pos(new uint[m]), buf_neg(new uint[m]);
+	unique_ptr<uint[]> buf_pos(new uint[n]), buf_neg(new uint[n]);
 
 	for(uint row = 0; row < m; ++row)
 	{
@@ -60,18 +60,18 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 			uint pos_n = sparse_lists[i].pos.n;
 			uint neg_n = sparse_lists[i].neg.n;
 
+			const sparse_list_tuple& indices = sparse_lists[i];
+
 			for(uint k = 0; k < pos_n; ++k)
 			{
-				uint idx    = sparse_lists[i].pos.i[k];
-				float value = input[idx * p + j];
-				pos += value;
+				uint idx = indices.pos.i[k];
+				pos += input[i * p + idx];
 			}
 
 			for(uint k = 0; k < neg_n; ++k)
 			{
-				uint idx    = sparse_lists[i].neg.i[k];
-				float value = input[idx * p + j];
-				neg += value;
+				uint idx = indices.neg.i[k];
+				neg += input[i * p + idx];
 			}
 
 			out[i * p + j] = weight_pos * pos + weight_neg * neg;
