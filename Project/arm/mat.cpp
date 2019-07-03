@@ -76,6 +76,71 @@ void normalize(float* buf)
 	}
 }
 
+template<uint num_neurons>
+unique_ptr<float[]> compute_zeta(float* gamma, float* variance)
+{
+	unique_ptr<float[]> zeta(new float[num_neurons]);
+	for(int i = 0; i < num_neurons; ++i) { zeta[i] = gamma[i] / sqrt(variance[i] + 1e-4); }
+	return zeta;
+}
+
+template<uint num_neurons, uint batch_size>
+void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, float* zeta)
+{
+	for(int i = 0; i < num_neurons; ++i)
+	{
+		for(int j = 0; j < batch_size; j += 8)
+		{
+			float input = InputTensor[i * batch_size + j];
+			float result = (input - mean[i]) * zeta[i] + beta[i];
+			InputTensor[i * batch_size + j] = result;
+		}
+	}
+}
+
+template<uint num_neurons, uint batch_size>
+uint ReLU(float* InputTensor, float threshold)
+{
+    float n = 255;
+    uint zero_count = 0;
+    for(int i = 0; i < batch_size * num_neurons; ++i)
+    {
+        if(InputTensor[i] < threshold)
+        {
+            InputTensor[i] = 0.0;
+        } else if(InputTensor[i] > 1)
+        {
+            InputTensor[i] = 1.0;
+        } else
+        {
+            InputTensor[i] = (round(InputTensor[i] * n) / n);
+        }
+            
+        if(InputTensor[i] == 0) zero_count++;
+    }
+    return zero_count;
+}
+
+template<uint batch_size, uint num_units>
+void Softmax(float* logits)
+{
+    float max, sum;
+
+    for(int id = 0; id < batch_size; ++id)
+    {
+        max = 0.0;
+        sum = 0.0;
+        for(int i = 0; i < num_units; i++)
+            if(max < logits[id * num_units + i]) max = logits[id * num_units + i];
+        for(int i = 0; i < num_units; ++i)
+        {
+            logits[id * num_units + i] = exp(logits[id * num_units + i] - max);
+            sum += logits[id * num_units + i];
+        }
+        for(int i = 0; i < num_units; ++i) { logits[id * num_units + i] /= sum; }
+    }
+}
+
 /* explicit template instantiations */
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
 
@@ -88,3 +153,9 @@ template unique_ptr<float[]> transpose<frame_size, batch_size>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, batch_size>(float* a);
 
 template void normalize<batch_size, frame_size>(float* buf);
+
+template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
+
+template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean, float* zeta);
+template uint ReLU<num_neurons, batch_size>(float* InputTensor, float threshold);
+template void Softmax<batch_size, num_units>(float* logits);
