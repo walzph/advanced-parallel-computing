@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 	float* mean_0     = parameters_npz["bn0/mean/EMA:0"].data<float>();
 	float* variance_0 = parameters_npz["bn0/variance/EMA:0"].data<float>();
 
-	unique_ptr<float[]> zeta_0 = compute_zeta<num_neurons>(gamma_0, variance_0);	
+	unique_ptr<float[]> zeta_0 = compute_zeta<num_neurons>(gamma_0, variance_0);
 
 	assert(num_neurons == parameters_npz["fc1/W:0"].shape[0]);
 	assert(num_neurons == parameters_npz["fc1/W:0"].shape[1]);
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	float* mean_1     = parameters_npz["bn1/mean/EMA:0"].data<float>();
 	float* variance_1 = parameters_npz["bn1/variance/EMA:0"].data<float>();
 
-	unique_ptr<float[]> zeta_1 = compute_zeta<num_neurons>(gamma_1, variance_1);	
+	unique_ptr<float[]> zeta_1 = compute_zeta<num_neurons>(gamma_1, variance_1);
 
 	assert(num_neurons == parameters_npz["fc2/W:0"].shape[0]);
 	assert(num_neurons == parameters_npz["fc2/W:0"].shape[1]);
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 	float* mean_2     = parameters_npz["bn2/mean/EMA:0"].data<float>();
 	float* variance_2 = parameters_npz["bn2/variance/EMA:0"].data<float>();
 
-	unique_ptr<float[]> zeta_2 = compute_zeta<num_neurons>(gamma_2, variance_2);	
+	unique_ptr<float[]> zeta_2 = compute_zeta<num_neurons>(gamma_2, variance_2);
 
 	assert(num_neurons == parameters_npz["fc3/W:0"].shape[0]);
 	assert(num_units == parameters_npz["fc3/W:0"].shape[1]);
@@ -138,23 +138,23 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
 		BatchnormalizationCMOZeta<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, mean_0, zeta_0.get());
-		zero_count += ReLU<num_neurons,batch_size>(out_tensor_0_t.get(), 0.0);
-		
+		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
+
 		// Second Layer
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
 		BatchnormalizationCMOZeta<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, mean_1, zeta_1.get());
-		zero_count += ReLU<num_neurons,batch_size>(out_tensor_1_t.get(), 0.0);
-		
+		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
+
 		// Third Layer
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
 		BatchnormalizationCMOZeta<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, mean_2, zeta_2.get());
-		zero_count += ReLU<num_neurons,batch_size>(out_tensor_2_t.get(), 0.0);
-		
+		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
+
 		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
 
-		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_2);
+		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_3);
 
 		Softmax<batch_size, num_units>(out_tensor_3.get());
 		// TODO: get_accuracy
