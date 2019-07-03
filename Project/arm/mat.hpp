@@ -25,3 +25,6 @@ uint ReLU(float* InputTensor, float threshold);
 
 template<uint batch_size, uint num_units>
 void Softmax(float* logits);
+
+template<uint batch_size, uint num_units>
+float get_accuracy(float* probs, int* labels);

@@ -16,6 +16,9 @@ using std::copy;
 template<uint batch_size>
 unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id);
 
+template<uint batch_size>
+unique_ptr<int[]> init_labels(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id);
+
 int main(int argc, char* argv[])
 {
 	mnist::MNIST_dataset<vector, vector<float>, uint8_t> dataset =
@@ -126,11 +129,14 @@ int main(int argc, char* argv[])
 
 	uint n_test_set = dataset.test_images.size();
 
+	uint num_batches = n_test_set / batch_size;
 	uint zero_count = 0;
-
-	for(uint batch = 0; batch < n_test_set / batch_size; ++batch)
+	float accuracy;
+	for(uint batch = 0; batch < num_batches; ++batch)
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
+		unique_ptr<int[]> labels = init_labels<batch_size>(dataset, batch);
+
 		normalize<batch_size, frame_size>(input.get());
 		unique_ptr<float[]> input_t = transpose<frame_size, batch_size>(input.get());
 
@@ -157,12 +163,15 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_2);
 
 		Softmax<batch_size, num_units>(out_tensor_3.get());
-		// TODO: get_accuracy
 
+		int accuracy_batch = get_accuracy<batch_size, num_units>(out_tensor_3.get(), labels.get()) * 100;
+		accuracy += accuracy_batch;
 		printf(".");
 		fflush(stdout);
 	}
+	accuracy = accuracy / num_batches;
 	printf("\n");
+	LOG(accuracy);
 }
 
 template<uint batch_size>
@@ -174,6 +183,17 @@ unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vect
 		uint idx = offset * batch_size + i;
 		assert(data.test_images.at(idx).size() == frame_size);
 		copy(data.test_images.at(idx).begin(), data.test_images.at(idx).end(), out.get() + i * frame_size);
+	}
+	return out;
+}
+
+template<uint batch_size>
+unique_ptr<int[]> init_labels(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id)
+{
+	unique_ptr<int[]> out(new int[batch_size * frame_size]);
+	for(int frame_id = 0; frame_id < batch_size; frame_id++)
+	{ 
+		out[frame_id] = (int) data.test_labels.at(id * batch_size + frame_id); 
 	}
 	return out;
 }

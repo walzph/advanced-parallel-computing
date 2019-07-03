@@ -618,7 +618,7 @@ void SAFcBnReLUAVX2( uint16_t* a, uint16_t* indices, uint16_t** b, float* c, flo
 				accu = _mm256_add_epi16( accu, input8bit );
 				//_mm256_store_si256( (__m256i*) &c_p[input_row], accu );
 				for( int vec_id=0; vec_id<16; ++vec_id ) {
-				 	c_p[indices[input_row+vec_id+1]] = _mm256_extract_epi16( accu, vec_id );
+				 	// c_p[indices[input_row+vec_id+1]] = _mm256_extract_epi16( accu, vec_id );
 				}
       }
 			for( int input_row=a_cols_vec; input_row<a_cols; ++input_row ) {

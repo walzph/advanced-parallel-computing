@@ -141,6 +141,32 @@ void Softmax(float* logits)
     }
 }
 
+template<uint batch_size, uint num_units>
+float get_accuracy(float* probs, int* labels)
+{
+    float max;
+    int pred_class;
+    int correct = 0;
+
+    for(int id = 0; id < batch_size; ++id)
+    {
+        // Get class with highest probability
+        max        = 0.0;
+        pred_class = 0;
+        for(int i = 0; i < num_units; i++)
+        {
+            if(max < probs[id * num_units + i])
+            {
+                max        = probs[id * num_units + i];
+                pred_class = i;
+            }
+        }
+        // Check against label
+        if(pred_class == labels[id]) correct++;
+    }
+    return (float) correct / batch_size;
+}
+
 /* explicit template instantiations */
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
 
@@ -159,3 +185,4 @@ template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* vari
 template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean, float* zeta);
 template uint ReLU<num_neurons, batch_size>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);
+template float get_accuracy<batch_size, num_units>(float* probs, int* labels);
