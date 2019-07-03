@@ -62,17 +62,23 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 
 			const sparse_list_tuple& indices = sparse_lists[i];
 
+			// printf("pos: ");
 			for(uint k = 0; k < pos_n; ++k)
 			{
 				uint idx = indices.pos.i[k];
-				pos += input[i * p + idx];
+				// printf("%d ", idx);
+				pos += input[idx * p + j];
 			}
+			// printf("\n");
 
+			// printf("neg: ");
 			for(uint k = 0; k < neg_n; ++k)
 			{
 				uint idx = indices.neg.i[k];
-				neg += input[i * p + idx];
+				// printf("%d ", idx);
+				neg += input[idx * p + j];
 			}
+			// printf("\n");
 
 			out[i * p + j] = weight_pos * pos + weight_neg * neg;
 		}
@@ -88,7 +94,15 @@ createSparseList<num_neurons, frame_size>(const float* weight_tensor, const floa
 template unique_ptr<sparse_list_tuple[]>
 createSparseList<num_neurons, num_neurons>(const float* weight_tensor, const float weight_pos, const float weight_neg);
 
+template unique_ptr<sparse_list_tuple[]>
+createSparseList<num_units, num_neurons>(const float* weight_tensor, const float weight_pos, const float weight_neg);
+
 template unique_ptr<float[]> sparseMatrixMultiply<num_neurons, batch_size>(const float* input,
                                                                            const sparse_list_tuple* sparse_lists,
                                                                            const float weight_pos,
                                                                            const float weight_neg);
+
+template unique_ptr<float[]> sparseMatrixMultiply<num_units, batch_size>(const float* input,
+                                                                         const sparse_list_tuple* sparse_lists,
+                                                                         const float weight_pos,
+                                                                         const float weight_neg);

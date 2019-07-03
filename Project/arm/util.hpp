@@ -11,6 +11,6 @@ using std::unique_ptr;
 using std::vector;
 
 const uint batch_size  = 1; // 64;
-const uint frame_size  = 28 * 28;
-const uint num_neurons = 1024;
-const uint num_units   = 10;
+const uint frame_size  = 2; // 28 * 28;
+const uint num_neurons = 3; // 1024;
+const uint num_units   = 2; // 10;
