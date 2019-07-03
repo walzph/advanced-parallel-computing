@@ -40,9 +40,6 @@ int main(int argc, char* argv[])
 	unique_ptr<sparse_list_tuple[]> sparse_lists_0 =
 	    createSparseList<num_neurons, frame_size>(weight_tensor_0_t.get(), weight_pos_0, weight_neg_0);
 
-	uint16_t** ap;
-	createSparseList(weight_tensor_0_t.get(), ap, weight_pos_0, weight_neg_0, num_neurons, frame_size);
-
 	assert(num_neurons == parameters_npz["fc0/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn0/beta:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn0/gamma:0"].shape[0]);
@@ -159,8 +156,7 @@ int main(int argc, char* argv[])
 
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_2);
 
-		// TODO: fully connected & softmax
-		Softmax<batch_size, num_units>(float* logits);
+		Softmax<batch_size, num_units>(out_tensor_3.get());
 		// TODO: get_accuracy
 
 		printf(".");
