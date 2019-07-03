@@ -3,6 +3,22 @@
 #include <cassert>
 #include <cmath>
 
+template<uint m, uint n, uint p>
+unique_ptr<float[]> mul(float* a, float* b)
+{
+	unique_ptr<float[]> c(new float[m * p]);
+	for(uint i = 0; i < m; ++i)
+	{
+		for(uint j = 0; j < p; ++j)
+		{
+			float c_ij = 0;
+			for(uint k = 0; k < n; ++k) c_ij += a[i * n + k] * b[k * p + j];
+			c[i * p + j] = c_ij;
+		}
+	}
+	return c;
+}
+
 template<uint m, uint n>
 float max(float* a)
 {
@@ -61,12 +77,14 @@ void normalize(float* buf)
 }
 
 /* explicit template instantiations */
+template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
+
 template void ternarize<frame_size, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
 template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
 
 template unique_ptr<float[]> transpose<frame_size, num_neurons>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, num_neurons>(float* a);
-template unique_ptr<float[]> transpose<batch_size, frame_size>(float* a);
+template unique_ptr<float[]> transpose<frame_size, batch_size>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, batch_size>(float* a);
 
 template void normalize<batch_size, frame_size>(float* buf);

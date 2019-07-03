@@ -40,6 +40,9 @@ int main(int argc, char* argv[])
 	unique_ptr<sparse_list_tuple[]> sparse_lists_0 =
 	    createSparseList<num_neurons, frame_size>(weight_tensor_0_t.get(), weight_pos_0, weight_neg_0);
 
+	uint16_t** ap;
+	createSparseList(weight_tensor_0_t.get(), ap, weight_pos_0, weight_neg_0, num_neurons, frame_size);
+
 	assert(num_neurons == parameters_npz["fc0/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn0/beta:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn0/gamma:0"].shape[0]);
@@ -127,7 +130,7 @@ int main(int argc, char* argv[])
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
 		normalize<batch_size, frame_size>(input.get());
-		unique_ptr<float[]> input_t = transpose<batch_size, frame_size>(input.get());
+		unique_ptr<float[]> input_t = transpose<frame_size, batch_size>(input.get());
 
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
@@ -138,6 +141,8 @@ int main(int argc, char* argv[])
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
 
 		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
+
+		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_2);
 
 		// TODO: fully connected & softmax
 		// TODO: get_accuracy
