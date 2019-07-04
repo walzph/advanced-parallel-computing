@@ -84,27 +84,38 @@ unique_ptr<float[]> compute_zeta(float* gamma, float* variance)
 	return zeta;
 }
 
-template<uint num_neurons, uint batch_size>
-void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, float* zeta)
-{
-	for(int i = 0; i < num_neurons; ++i)
-	{
-		for(int j = 0; j < batch_size; j += 8)
-		{
-			float input                     = InputTensor[i * batch_size + j];
-			float result                    = (input - mean[i]) * zeta[i] + beta[i];
-			InputTensor[i * batch_size + j] = result;
-		}
-	}
-}
-
 template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance)
 {
 	for(int i = 0; i < n; ++i)
 	{
 		for(int j = 0; j < m; ++j)
-			in[j * n + i] = ((in[j * n + i] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
+			in[j * n + i] = ((in[i * n + j] - mean[i]) * gamma[i]) / sqrt(variance[i] + 1e-4) + beta[i];
+	}
+}
+
+template<uint m, uint n>
+void batch_normalization_arm(float* in, float* beta, float* mean, float* zeta)
+{
+	// n = num_neurons
+	// m = batch_size
+	float32x4_t mean4ps;
+	float32x4_t beta4ps;
+	float32x4_t zeta4ps;
+
+
+	for(int i = 0; i < n; ++i)
+	{
+		mean4ps = vld1q_f32(mean[i]);
+		beta4ps = vld1q_f32(beta[i]);
+		zeta4ps = vld1q_f32(zeta[i]);
+
+		for(int j = 0; j < m; j += 4) {
+			float32x4_t input = vld1q_f32(in[i * x + j]);
+			// __m256 result = _mm256_fmadd_ps(_mm256_sub_ps(input, mean8ps), zeta8ps, beta8ps);
+			float32x4_t result = vfmaq_lane_f32(vsub_f32(input, mean8ps), zeta8ps, beta8ps);
+			vst1q_f32(in[i * x + j], result);
+		}
 	}
 }
 
@@ -194,12 +205,12 @@ template void normalize<batch_size, frame_size>(float* buf);
 
 template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
 
-template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean,
-                                                                 float* zeta);
-
 template void batch_normalization<num_neurons, batch_size>(float* in, float* beta, float* gamma, float* mean,
                                                            float* variance);
 
+template void batch_normalization_arm<num_neurons, batch_size>(float* in, float* beta, float* mean,
+															   float* zeta);
+															   
 template uint ReLU<num_neurons, batch_size>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);
 template float get_accuracy<batch_size, num_units>(float* probs, int* labels);
