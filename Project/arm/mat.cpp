@@ -104,7 +104,7 @@ void batch_normalization(float* in, float* beta, float* gamma, float* mean, floa
 	for(int i = 0; i < n; ++i)
 	{
 		for(int j = 0; j < m; ++j)
-			in[j * n + i] = ((in[i * n + j] - mean[i]) * gamma[i]) / sqrt(variance[i] + 1e-4) + beta[i];
+			in[j * n + i] = ((in[j * n + i] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
 	}
 }
 
@@ -180,6 +180,7 @@ float get_accuracy(float* probs, int* labels)
 /* explicit template instantiations */
 template unique_ptr<float[]> mul<num_units, num_neurons, batch_size>(float* a, float* b);
 template unique_ptr<float[]> mul<num_neurons, frame_size, batch_size>(float* a, float* b);
+// template unique_ptr<float[]> mul<num_neurons, num_neurons, batch_size>(float* a, float* b);
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
 
 template void ternarize<frame_size, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
@@ -187,7 +188,8 @@ template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, fl
 
 template unique_ptr<float[]> transpose<frame_size, num_neurons>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, num_neurons>(float* a);
-template unique_ptr<float[]> transpose<frame_size, batch_size>(float* a);
+template unique_ptr<float[]> transpose<batch_size, frame_size>(float* a);
+// template unique_ptr<float[]> transpose<frame_size, batch_size>(float* a);
 template unique_ptr<float[]> transpose<num_neurons, batch_size>(float* a);
 
 template void normalize<batch_size, frame_size>(float* buf);
