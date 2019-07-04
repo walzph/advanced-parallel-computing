@@ -16,14 +16,11 @@ void normalize(float* buf);
 template<uint num_neurons>
 unique_ptr<float[]> compute_zeta(float* gamma, float* variance);
 
-template<uint num_neurons, uint batch_size>
-void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, float* zeta);
-
 template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance);
 
 template<uint m, uint n>
-void batch_normalization_arm(float* in, float* beta, float* gamma, float* mean, float* variance)
+void batch_normalization_arm(float* in, float* beta, float* mean, float* zeta);
 
 template<uint num_neurons, uint batch_size>
 uint ReLU(float* InputTensor, float threshold);
