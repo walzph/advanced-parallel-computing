@@ -207,6 +207,9 @@ int ReLU(float* InputTensor, input_t* QuantTensor, uint16_t* indices, int x, int
 	return (int) zero_count;
 }
 
+
+//x batch
+//y neurons
 void BatchnormalizationRMO(float* InputTensor, int x, int y, float* beta, float* gamma, float* mean, float* variance)
 {
 	assert(y == NUM_NEURONS);
@@ -221,6 +224,9 @@ void BatchnormalizationRMO(float* InputTensor, int x, int y, float* beta, float*
 	}
 }
 
+
+//x batch
+//y neurons
 void BatchnormalizationCMO(float* InputTensor, int x, int y, float* beta, float* gamma, float* mean, float* variance)
 {
 	assert(y == NUM_NEURONS);
@@ -398,7 +404,9 @@ void initialize_labels(int* labels, mnist::MNIST_dataset<std::vector, std::vecto
                        int batch_size, int batch_id)
 {
 	for(int frame_id = 0; frame_id < batch_size; frame_id++)
-	{ labels[frame_id] = (int) dataset.test_labels.at(batch_id * batch_size + frame_id); }
+	{
+		labels[frame_id] = (int) dataset.test_labels.at(batch_id * batch_size + frame_id); 
+	}
 }
 
 void normalize_pixel(float* InputTensor, int batch_size, int frame_size)

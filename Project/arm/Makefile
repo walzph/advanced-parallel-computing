@@ -1,8 +1,7 @@
 .PHONY: build clean rebuild run
 
 CFLAGS += -O3 -march=native -mtune=native -fopenmp -Wall --std=c++14 -Imnist/include
-#CFLAGS += -O0 -fopenmp -Wall --std=c++14 -Imnist/include
-LDFLAGS += -fopenmp -lcnpy
+LDFLAGS += -lcnpy -fopenmp
 
 OBJ := test.o mat.o sparse.o
 SRC_DEP := $(patsubst %.o,%.d,$(OBJ))

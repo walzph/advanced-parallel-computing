@@ -3,6 +3,9 @@
 template<uint m, uint n, uint p>
 unique_ptr<float[]> mul(float* a, float* b);
 
+template<uint rowA, uint colArowB, uint colB>
+unique_ptr<float[]> mulJona(float* a, float* b);
+
 template<uint m, uint n>
 void ternarize(float* a, float weight_pos, float weight_neg, float threshold);
 
@@ -12,6 +15,8 @@ unique_ptr<float[]> transpose(float* a);
 template<uint batch_size, uint frame_size>
 void normalize(float* buf);
 
+template<uint batch_size, uint num_neurons>
+void batch_normalizationJona(float* in, float* beta, float* gamma, float* mean, float* variance);
 
 template<uint num_neurons>
 unique_ptr<float[]> compute_zeta(float* gamma, float* variance);
