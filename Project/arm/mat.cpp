@@ -108,6 +108,17 @@ void batch_normalization(float* in, float* beta, float* gamma, float* mean, floa
 	}
 }
 
+template<uint m, uint n>
+void batch_normalization(float* in, float* mean, float* beta, float* zeta)
+{
+#pragma omp parallel for
+	for(int i = 0; i < m; ++i)
+	{
+#pragma omp simd
+		for(int j = 0; j < n; ++j) in[i * n + j] = ((in[i * n + j] - mean[j]) * zeta[j]) + beta[j];
+	}
+}
+
 template<uint num_neurons, uint batch_size>
 void ReLU(float* InputTensor, float threshold)
 {
@@ -191,13 +202,15 @@ template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, fl
 
 template void normalize<batch_size, frame_size>(float* buf);
 
-// template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
+template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
 
 // template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean,
 //                                                                  float* zeta);
 
 template void batch_normalization<batch_size, num_neurons>(float* in, float* beta, float* gamma, float* mean,
                                                            float* variance);
+
+template void batch_normalization<batch_size, num_neurons>(float* in, float* mean, float* beta, float* zeta);
 
 template void ReLU<batch_size, num_neurons>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);

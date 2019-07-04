@@ -22,6 +22,9 @@ void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, flo
 template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance);
 
+template<uint m, uint n>
+void batch_normalization(float* in, float* mean, float* beta, float* zeta);
+
 template<uint num_neurons, uint batch_size>
 void ReLU(float* InputTensor, float threshold);
 

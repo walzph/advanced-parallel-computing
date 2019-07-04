@@ -63,12 +63,14 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 			uint pos_n = indices.pos.n;
 			uint neg_n = indices.neg.n;
 
+#pragma omp simd
 			for(uint k = 0; k < pos_n; ++k)
 			{
 				uint idx = indices.pos.i[k];
 				pos += input[i * n + idx];
 			}
 
+#pragma omp simd
 			for(uint k = 0; k < neg_n; ++k)
 			{
 				uint idx = indices.neg.i[k];

@@ -52,11 +52,13 @@ int main(int argc, char* argv[])
 	assert(num_neurons == parameters_npz["bn0/mean/EMA:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn0/variance/EMA:0"].shape[0]);
 
-	float* bias_0     = parameters_npz["fc0/b:0"].data<float>();
+	// float* bias_0     = parameters_npz["fc0/b:0"].data<float>();
 	float* beta_0     = parameters_npz["bn0/beta:0"].data<float>();
 	float* gamma_0    = parameters_npz["bn0/gamma:0"].data<float>();
 	float* mean_0     = parameters_npz["bn0/mean/EMA:0"].data<float>();
 	float* variance_0 = parameters_npz["bn0/variance/EMA:0"].data<float>();
+
+	unique_ptr<float[]> zeta_0 = compute_zeta<num_neurons>(gamma_0, variance_0);
 
 	assert(num_neurons == parameters_npz["fc1/W:0"].shape[0]);
 	assert(num_neurons == parameters_npz["fc1/W:0"].shape[1]);
@@ -81,11 +83,13 @@ int main(int argc, char* argv[])
 	assert(num_neurons == parameters_npz["bn1/mean/EMA:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn1/variance/EMA:0"].shape[0]);
 
-	float* bias_1     = parameters_npz["fc1/b:0"].data<float>();
+	// float* bias_1     = parameters_npz["fc1/b:0"].data<float>();
 	float* beta_1     = parameters_npz["bn1/beta:0"].data<float>();
 	float* gamma_1    = parameters_npz["bn1/gamma:0"].data<float>();
 	float* mean_1     = parameters_npz["bn1/mean/EMA:0"].data<float>();
 	float* variance_1 = parameters_npz["bn1/variance/EMA:0"].data<float>();
+
+	unique_ptr<float[]> zeta_1 = compute_zeta<num_neurons>(gamma_1, variance_1);
 
 	assert(num_neurons == parameters_npz["fc2/W:0"].shape[0]);
 	assert(num_neurons == parameters_npz["fc2/W:0"].shape[1]);
@@ -110,11 +114,13 @@ int main(int argc, char* argv[])
 	assert(num_neurons == parameters_npz["bn2/mean/EMA:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn2/variance/EMA:0"].shape[0]);
 
-	float* bias_2     = parameters_npz["fc2/b:0"].data<float>();
+	// float* bias_2     = parameters_npz["fc2/b:0"].data<float>();
 	float* beta_2     = parameters_npz["bn2/beta:0"].data<float>();
 	float* gamma_2    = parameters_npz["bn2/gamma:0"].data<float>();
 	float* mean_2     = parameters_npz["bn2/mean/EMA:0"].data<float>();
 	float* variance_2 = parameters_npz["bn2/variance/EMA:0"].data<float>();
+
+	unique_ptr<float[]> zeta_2 = compute_zeta<num_neurons>(gamma_2, variance_2);
 
 	assert(num_neurons == parameters_npz["fc3/W:0"].shape[0]);
 	assert(num_units == parameters_npz["fc3/W:0"].shape[1]);
@@ -122,7 +128,7 @@ int main(int argc, char* argv[])
 	float* weight_tensor_3 = parameters_npz["fc3/W:0"].data<float>();
 
 	assert(num_units == parameters_npz["fc3/b:0"].shape[0]);
-	float* bias_3 = parameters_npz["fc3/b:0"].data<float>();
+	// float* bias_3 = parameters_npz["fc3/b:0"].data<float>();
 
 	uint n_test_set = dataset.test_images.size();
 
@@ -154,7 +160,7 @@ int main(int argc, char* argv[])
 		    input.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
 		// unique_ptr<float[]> out_tensor_0 = mul<batch_size, frame_size, num_neurons>(input.get(), weight_tensor_0);
 
-		batch_normalization<batch_size, num_neurons>(out_tensor_0.get(), beta_0, gamma_0, mean_0, variance_0);
+		batch_normalization<batch_size, num_neurons>(out_tensor_0.get(), mean_0, beta_0, zeta_0.get());
 		ReLU<batch_size, num_neurons>(out_tensor_0.get(), 0.0);
 
 		// Second Layer
@@ -163,7 +169,7 @@ int main(int argc, char* argv[])
 		// unique_ptr<float[]> out_tensor_1 =
 		//     mul<batch_size, num_neurons, num_neurons>(out_tensor_0.get(), weight_tensor_1);
 
-		batch_normalization<batch_size, num_neurons>(out_tensor_1.get(), beta_1, gamma_1, mean_1, variance_1);
+		batch_normalization<batch_size, num_neurons>(out_tensor_1.get(), mean_1, beta_1, zeta_1.get());
 		ReLU<batch_size, num_neurons>(out_tensor_1.get(), 0.0);
 
 		// Third Layer
@@ -172,7 +178,7 @@ int main(int argc, char* argv[])
 		// unique_ptr<float[]> out_tensor_2 =
 		//     mul<batch_size, num_neurons, num_neurons>(out_tensor_1.get(), weight_tensor_2);
 
-		batch_normalization<batch_size, num_neurons>(out_tensor_2.get(), beta_2, gamma_2, mean_2, variance_2);
+		batch_normalization<batch_size, num_neurons>(out_tensor_2.get(), mean_2, beta_2, zeta_2.get());
 		ReLU<batch_size, num_neurons>(out_tensor_2.get(), 0.0);
 
 		// unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
