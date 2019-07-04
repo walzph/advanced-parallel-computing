@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 		    input.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
 		// unique_ptr<float[]> out_tensor_0 = mul<batch_size, frame_size, num_neurons>(input.get(), weight_tensor_0);
 
-		batch_normalization_arm<batch_size, num_neurons>((float32_t*) out_tensor_0.get(), (float32_t*) mean_0, (float32_t*) beta_0, (float32_t*) zeta_0.get());
+		batch_normalization_arm<batch_size, num_neurons>(out_tensor_0.get(), mean_0, beta_0, zeta_0.get());
 		ReLU<batch_size, num_neurons>(out_tensor_0.get(), 0.0);
 
 		// Second Layer
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 		// unique_ptr<float[]> out_tensor_1 =
 		//     mul<batch_size, num_neurons, num_neurons>(out_tensor_0.get(), weight_tensor_1);
 
-		batch_normalization_arm<batch_size, num_neurons>((float32_t*) out_tensor_1.get(), (float32_t*) mean_1, (float32_t*) beta_1, (float32_t*) zeta_1.get());
+		batch_normalization_arm<batch_size, num_neurons>(out_tensor_1.get(), mean_1, beta_1, zeta_1.get());
 		ReLU<batch_size, num_neurons>(out_tensor_1.get(), 0.0);
 
 		// Third Layer
@@ -180,10 +180,10 @@ int main(int argc, char* argv[])
 		// unique_ptr<float[]> out_tensor_2 =
 		//     mul<batch_size, num_neurons, num_neurons>(out_tensor_1.get(), weight_tensor_2);
 
-		batch_normalization_arm<batch_size, num_neurons>((float32_t*) out_tensor_2.get(), (float32_t*) mean_2, (float32_t*) beta_2, (float32_t*) zeta_2.get());
+		batch_normalization_arm<batch_size, num_neurons>(out_tensor_2.get(), mean_2, beta_2, zeta_2.get());
 		ReLU<batch_size, num_neurons>(out_tensor_2.get(), 0.0);
 
-		// unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());(float32_t*) 
+		// unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
 
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_3);
 
