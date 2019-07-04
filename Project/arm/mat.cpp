@@ -152,7 +152,7 @@ void batch_normalization_arm(float32_t *in, float32_t *mean, float32_t *beta, fl
 	float32x4_t mean4ps;
 	float32x4_t beta4ps;
 	float32x4_t zeta4ps;
-
+#pragma omp parallel for
 	for(int i = 0; i < batch_size; ++i)
 	{
 		for(int j = 0; j < num_neurons; j += 4) {
