@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <chrono>
 #include <iomanip>
 
 #include <cnpy.h>
@@ -277,6 +278,7 @@ int main(int argc, char* argv[])
 	uint zero_count  = 0;
 	float accuracy   = 0;
 
+	auto t0 = std::chrono::high_resolution_clock::now();
 	for(uint batch = 0; batch < num_batches; ++batch)
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
@@ -320,6 +322,11 @@ int main(int argc, char* argv[])
 		printf(".");
 		fflush(stdout);
 	}
+	auto t1     = std::chrono::high_resolution_clock::now();
+	double time = std::chrono::duration<double>(t1 - t0).count();
+	printf("\n");
+	LOG(time);
+
 	accuracy = accuracy / num_batches;
 	printf("\n");
 	LOG(accuracy);
