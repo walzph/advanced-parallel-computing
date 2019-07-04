@@ -11,6 +11,8 @@
 #include "sparse.hpp"
 #include "util.hpp"
 
+#include <arm_neon.h>
+
 using std::copy;
 
 template<uint batch_size>
@@ -253,21 +255,24 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
 
-		batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
+		// batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
+		batch_normalization_arm<num_neurons, batch_size>(out_tensor_0_t.get(), (float32_t*) beta_0, (float32_t*) mean_0, (float32_t*) zeta_0.get());
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
 
 		// Second Layer
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
 
-		batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
+		// batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
+		batch_normalization_arm<num_neurons, batch_size>(out_tensor_1_t.get(), (float32_t*) beta_1, (float32_t*) mean_1, (float32_t*) zeta_1.get());		
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
 
 		// Third Layer
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
 
-		batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
+		// batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
+		batch_normalization_arm<num_neurons, batch_size>(out_tensor_2_t.get(), (float32_t*) beta_2, (float32_t*) mean_2, (float32_t*) zeta_2.get());
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
 
 		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
