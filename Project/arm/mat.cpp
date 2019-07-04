@@ -117,9 +117,9 @@ void batch_normalization_arm(float32_t *in, float32_t *beta, float32_t *mean, fl
 	float32x4_t beta4ps;
 	float32x4_t zeta4ps;
 
-	for(int i = 0; i < n; ++i)
+	for(int i = 0; i < n; i+=4)
 	{
-		for(int j = 0; j < m; j += 4) {
+		for(int j = 0; j < m; ++j) {
 			mean4ps = vld1q_f32(mean+j);
 			beta4ps = vld1q_f32(beta+j);
 			zeta4ps = vld1q_f32(zeta+j);
