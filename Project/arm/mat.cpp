@@ -174,7 +174,7 @@ void batch_normalization_arm(float32_t *in, float32_t *beta, float32_t *mean, fl
 			zeta4ps = vld1q_f32(zeta+j);
 
 			float32x4_t input = vld1q_f32(in + (i * num_neurons + j));
-			float32x4_t result = vfmaq_lane_f32(vsubq_f32(input, mean4ps), zeta4ps, beta4ps, 0);
+			float32x4_t result = vfmaq_laneq_f32(vsubq_f32(input, mean4ps), zeta4ps, beta4ps, 0);
 			vst1q_f32(in + (i * num_neurons + j), result);
 		}
 	}
