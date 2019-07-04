@@ -252,8 +252,6 @@ int main(int argc, char* argv[])
 		// Fist Layer
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
-		// unique_ptr<float[]> out_tensor_0_t =
-		//     mul<num_neurons, frame_size, batch_size>(weight_tensor_0_t.get(), input_t.get());
 
 		batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
@@ -261,8 +259,6 @@ int main(int argc, char* argv[])
 		// Second Layer
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
-		// unique_ptr<float[]> out_tensor_1_t =
-		//     mul<num_neurons, num_neurons, batch_size>(weight_tensor_1_t.get(), out_tensor_0_t.get());
 
 		batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
@@ -270,8 +266,6 @@ int main(int argc, char* argv[])
 		// Third Layer
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
-		// unique_ptr<float[]> out_tensor_2_t =
-		//     mul<num_neurons, num_neurons, batch_size>(weight_tensor_2_t.get(), out_tensor_1_t.get());
 
 		batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
@@ -283,12 +277,6 @@ int main(int argc, char* argv[])
 		// print_mat<batch_size, num_units>(out_tensor_3.get());
 
 		Softmax<batch_size, num_units>(out_tensor_3.get());
-
-		// for(uint i = 0; i < batch_size; ++i)
-		// {
-		// 	print_list<num_units>(out_tensor_3.get() + i * batch_size);
-		// 	printf("==> %d\n", max_id<num_units>(out_tensor_3.get() + i * batch_size));
-		// }
 
 		int accuracy_batch = get_accuracy<batch_size, num_units>(out_tensor_3.get(), labels.get()) * 100;
 		accuracy += accuracy_batch;
