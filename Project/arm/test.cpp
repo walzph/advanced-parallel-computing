@@ -255,10 +255,8 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
 
-		unique_ptr<float[]> out_tensor_0 = transpose<batch_size, frame_size>(out_tensor_0_t.get());
 		// batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
-		batch_normalization_arm<num_neurons, batch_size>(out_tensor_0.get(), (float32_t*) beta_0, (float32_t*) mean_0, (float32_t*) zeta_0.get());
-		out_tensor_0_t = transpose<batch_size, frame_size>(out_tensor_0.get());
+		batch_normalization_arm<num_neurons, batch_size>(out_tensor_0_t.get(), (float32_t*) beta_0, (float32_t*) mean_0, (float32_t*) zeta_0.get());
 
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
 
@@ -266,10 +264,8 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
 
-		unique_ptr<float[]> out_tensor_1 = transpose<batch_size, frame_size>(out_tensor_1_t.get());
 		// batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
-		batch_normalization_arm<num_neurons, batch_size>(out_tensor_1.get(), (float32_t*) beta_1, (float32_t*) mean_1, (float32_t*) zeta_1.get());		
-		out_tensor_1_t = transpose<batch_size, frame_size>(out_tensor_1.get());
+		batch_normalization_arm<num_neurons, batch_size>(out_tensor_1_t.get(), (float32_t*) beta_1, (float32_t*) mean_1, (float32_t*) zeta_1.get());		
 
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
 
@@ -277,14 +273,12 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
 
-		unique_ptr<float[]> out_tensor_2 = transpose<batch_size, frame_size>(out_tensor_2_t.get());
 		// batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
-		batch_normalization_arm<num_neurons, batch_size>(out_tensor_2.get(), (float32_t*) beta_2, (float32_t*) mean_2, (float32_t*) zeta_2.get());
-		out_tensor_2_t = transpose<batch_size, frame_size>(out_tensor_2.get());
+		batch_normalization_arm<num_neurons, batch_size>(out_tensor_2_t.get(), (float32_t*) beta_2, (float32_t*) mean_2, (float32_t*) zeta_2.get());
 
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
 
-		out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
+		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
 
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_3);
 
