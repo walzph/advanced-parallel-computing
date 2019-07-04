@@ -97,7 +97,7 @@ void batch_normalization(float* in, float* beta, float* gamma, float* mean, floa
 }
 
 template<uint m, uint n>
-void batch_normalization_arm(float* in, float* beta, float* mean, float* zeta)
+void batch_normalization_arm(float32_t *in, float32_t *beta, float32_t *mean, float32_t *zeta)
 {
 	// n = num_neurons
 	// m = batch_size
@@ -115,7 +115,7 @@ void batch_normalization_arm(float* in, float* beta, float* mean, float* zeta)
 		for(int j = 0; j < m; j += 4) {
 			float32x4_t input = vld1q_f32(in[i * x + j]);
 			// __m256 result = _mm256_fmadd_ps(_mm256_sub_ps(input, mean8ps), zeta8ps, beta8ps);
-			float32x4_t result = vfmaq_lane_f32(vsub_f32(input, mean8ps), zeta8ps, beta8ps);
+			float32x4_t result = vfmaq_lane_f32(vsub_f32(input, mean4ps), zeta4ps, beta4ps);
 			vst1q_f32(in[i * x + j], result);
 		}
 	}
