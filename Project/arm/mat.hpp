@@ -28,7 +28,7 @@ void batch_normalization_arm(float32_t *in, float32_t *mean, float32_t *beta, fl
 template<uint m, uint n>
 void batch_normalization(float* in, float* mean, float* beta, float* zeta);
 
-template<uint num_neurons, uint batch_size>
+template<uint batch_size, uint num_neurons>
 void ReLU(float* InputTensor, float threshold);
 
 template<uint batch_size, uint num_units>
