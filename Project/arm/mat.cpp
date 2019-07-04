@@ -164,14 +164,22 @@ void Softmax(float* logits)
 template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance)
 {
-    for(int i = 0; i < n; ++i)
-    {
-        for(int j = 0; j < m; ++j)
-            in[j * n + i] = ((in[j * n + i] - mean[i]) * gamma[i]) / sqrt(variance[i] + 1e-4) + beta[i];
-    }
+	for(int i = 0; i < n; ++i)
+	{
+		for(int j = 0; j < m; ++j)
+			in[i * m + j] = ((in[i * m + j] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
+	}
 }
 
-
+template<uint batch_size, uint num_neurons>
+void batch_normalizationJona(float* in, float* beta, float* gamma, float* mean, float* variance)
+{
+	for(int i = 0; i < batch_size; ++i)
+	{
+		for(int j = 0; j < num_neurons; ++j)
+			in[i * num_neurons + j] = ((in[i * num_neurons + j] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
+	}
+}
 
 template<uint batch_size, uint num_units>
 float get_accuracy(float* probs, int* labels)
@@ -226,3 +234,5 @@ template void Softmax<batch_size, num_units>(float* logits);
 template float get_accuracy<batch_size, num_units>(float* probs, int* labels);
 
 template void batch_normalization<num_neurons, batch_size>(float* in, float* beta, float* gamma, float* mean,float* variance);
+
+template void batch_normalizationJona<batch_size, num_neurons>(float* in, float* beta, float* gamma, float* mean,float* variance);

@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
 
 	uint n_test_set = dataset.test_images.size();
 
-	uint num_batches = 1; //n_test_set / batch_size;
+	uint num_batches = n_test_set / batch_size;
 	uint zero_count  = 0;
 	float accuracy   = 0;
 
@@ -282,25 +282,25 @@ int main(int argc, char* argv[])
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
 		unique_ptr<int[]> labels  = init_labels<batch_size>(dataset, batch);
 
-		print_frame<28 * batch_size, 28>(input.get());
-		print_list<batch_size>(labels.get());
+		//print_frame<28 * batch_size, 28>(input.get());
+		//print_list<batch_size>(labels.get());
 
 		normalize<batch_size, frame_size>(input.get());
 		//unique_ptr<float[]> input_t = transpose<frame_size, batch_size>(input.get());
 
 		// First Layer
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiplyJona<batch_size, frame_size, num_neurons>(input.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);	
-		batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
+		batch_normalizationJona<batch_size, num_neurons>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);	
 
 		// Second Layer
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiplyJona<batch_size, num_neurons, num_neurons>(out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
-		batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
+		batch_normalizationJona<batch_size, num_neurons>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
 
 		// Third Layer
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiplyJona<batch_size, num_neurons, num_neurons>(out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
-		batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
+		batch_normalizationJona<batch_size, num_neurons>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
 		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
 
 		//unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
@@ -309,11 +309,11 @@ int main(int argc, char* argv[])
 
 		Softmax<batch_size, num_units>(out_tensor_3.get());
 
-		for(uint i = 0; i < batch_size; ++i)
-		{
-			print_list<num_units>(out_tensor_3.get() + i * num_units);
-			printf("==> %d\n", max_id<num_units>(out_tensor_3.get() + i * num_units));
-		}
+		// for(uint i = 0; i < batch_size; ++i)
+		// {
+		// 	print_list<num_units>(out_tensor_3.get() + i * num_units);
+		// 	printf("==> %d\n", max_id<num_units>(out_tensor_3.get() + i * num_units));
+		// }
 
 		int accuracy_batch = get_accuracy<batch_size, num_units>(out_tensor_3.get(), labels.get()) * 100;
 		accuracy += accuracy_batch;

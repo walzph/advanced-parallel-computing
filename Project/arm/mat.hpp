@@ -15,6 +15,8 @@ unique_ptr<float[]> transpose(float* a);
 template<uint batch_size, uint frame_size>
 void normalize(float* buf);
 
+template<uint batch_size, uint num_neurons>
+void batch_normalizationJona(float* in, float* beta, float* gamma, float* mean, float* variance);
 
 template<uint num_neurons>
 unique_ptr<float[]> compute_zeta(float* gamma, float* variance);

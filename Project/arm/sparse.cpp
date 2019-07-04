@@ -155,14 +155,16 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 	return out;
 }
 
+
 template<uint rowA, uint colArowB, uint colB>
 unique_ptr<float[]> sparseMatrixMultiplyJona(const float* input, const sparse_list_tuple* sparse_lists,
                                          const float weight_pos, const float weight_neg)
 {
 	unique_ptr<float[]> out(new float[rowA * colB]);
 
+	#pragma omp parallel for
 	for(uint i = 0; i < rowA; ++i)
-	{
+	{		
 		for(uint j = 0; j < colB; ++j)
 		{
 			float pos = 0, neg = 0;
