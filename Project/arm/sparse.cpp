@@ -63,23 +63,17 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 
 			const sparse_list_tuple& indices = sparse_lists[i];
 
-			// printf("pos: ");
 			for(uint k = 0; k < pos_n; ++k)
 			{
 				uint idx = indices.pos.i[k];
-				// printf("%d ", idx);
 				pos += input[idx * p + j];
 			}
-			// printf("\n");
 
-			// printf("neg: ");
 			for(uint k = 0; k < neg_n; ++k)
 			{
 				uint idx = indices.neg.i[k];
-				// printf("%d ", idx);
 				neg += input[idx * p + j];
 			}
-			// printf("\n");
 
 			out[i * p + j] = weight_pos * pos + weight_neg * neg;
 		}

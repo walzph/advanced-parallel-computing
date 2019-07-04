@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <iomanip>
 
@@ -19,111 +20,10 @@ unique_ptr<float[]> init_input(const mnist::MNIST_dataset<std::vector, std::vect
 template<uint batch_size>
 unique_ptr<int[]> init_labels(const mnist::MNIST_dataset<std::vector, std::vector<float>, uint8_t>& data, uint id);
 
-template<uint m, uint n>
-void print_frame(float* frame)
-{
-	for(uint i = 0; i < m; ++i)
-	{
-		for(uint j = 0; j < n; ++j) printf(frame[i * n + j] == 0 ? " " : "#");
-		printf("\n");
-	}
-}
-
-template<uint n, typename T>
-void print_list(T* list)
-{
-	std::cout << "[ ";
-	for(uint i = 0; i < n; ++i) std::cout << list[i] << ", ";
-	std::cout << "]\n";
-}
-
-template<uint n, typename T>
-uint max_id(T* list)
-{
-	uint id = 0;
-	T max   = *list;
-	for(uint i = 1; i < n; ++i)
-	{
-		T value = list[i];
-		if(value > max)
-		{
-			id  = i;
-			max = value;
-		};
-	}
-	return id;
-}
-
-template<uint m, uint n>
-void print_mat(float* a)
-{
-	for(uint i = 0; i < m; ++i)
-	{
-		for(uint j = 0; j < n; ++j) printf("%.2f \t", a[i * n + j]);
-		printf("\n");
-	}
-	printf("\n");
-}
-
-void print_sparse_list(sparse_list& list)
-{
-	for(uint i = 0; i < list.n; ++i) printf("%d, ", list.i[i]);
-}
-
-template<uint n>
-void print_sparse_list(sparse_list_tuple* tuple)
-{
-	for(uint i = 0; i < n; ++i)
-	{
-		printf("pos: ");
-		print_sparse_list(tuple->pos);
-		printf("\nneg: ");
-		print_sparse_list(tuple->neg);
-		printf("\n");
-		++tuple;
-	}
-	printf("\n");
-}
-
 int main(int argc, char* argv[])
 {
-#ifdef TEST
-	float input[] { 3, 1, 7, 2 };
-	print_mat<frame_size, batch_size>(input);
+	LOG(batch_size);
 
-	float weight_tensor_0_t[] { 1, 0, 0, 1, 1, 0 };
-	print_mat<num_neurons, frame_size>(weight_tensor_0_t);
-
-	float weight_tensor_1_t[] { 0, 1, 0, -1, 0, -1 };
-	print_mat<num_units, num_neurons>(weight_tensor_1_t);
-
-	unique_ptr<float[]> weight_tensor_0 = transpose<num_neurons, frame_size>(weight_tensor_0_t);
-	print_mat<frame_size, num_neurons>(weight_tensor_0.get());
-
-	unique_ptr<sparse_list_tuple[]> sparse_lists_0 =
-	    createSparseList<num_neurons, frame_size>(weight_tensor_0_t, 1, -1);
-
-	// print_sparse_list<num_neurons>(sparse_lists_0.get());
-
-	unique_ptr<sparse_list_tuple[]> sparse_lists_1 = createSparseList<num_units, num_neurons>(weight_tensor_1_t, 1, -1);
-
-	// print_sparse_list<num_units>(sparse_lists_1.get());
-
-	unique_ptr<float[]> out_tensor_0 =
-	    sparseMatrixMultiply<num_neurons, batch_size>(input, sparse_lists_0.get(), 0.25, -0.25);
-	unique_ptr<float[]> _out_tensor_0 = mul<num_neurons, frame_size, batch_size>(weight_tensor_0_t, input);
-	print_mat<num_neurons, batch_size>(out_tensor_0.get());
-	// print_mat<num_neurons, batch_size>(_out_tensor_0.get());
-
-	ReLU<num_neurons, batch_size>(out_tensor_0.get(), 0.1);
-	print_mat<num_neurons, batch_size>(out_tensor_0.get());
-
-	unique_ptr<float[]> out_tensor_1 =
-	    sparseMatrixMultiply<num_units, batch_size>(out_tensor_0.get(), sparse_lists_1.get(), 1, -1);
-	unique_ptr<float[]> _out_tensor_1 = mul<num_units, num_neurons, batch_size>(weight_tensor_1_t, out_tensor_0.get());
-	print_mat<num_units, batch_size>(out_tensor_1.get());
-	// print_mat<num_units, batch_size>(_out_tensor_1.get());
-#else
 	mnist::MNIST_dataset<vector, vector<float>, uint8_t> dataset =
 	    mnist::read_dataset<vector, vector, float, uint8_t>("./mnist/");
 
@@ -235,58 +135,68 @@ int main(int argc, char* argv[])
 	uint n_test_set = dataset.test_images.size();
 
 	uint num_batches = n_test_set / batch_size;
-	uint zero_count  = 0;
 	float accuracy   = 0;
+
+	unique_ptr<unique_ptr<float[]>[]> inputs_t(new unique_ptr<float[]>[num_batches]);
+	unique_ptr<unique_ptr<int[]>[]> labels(new unique_ptr<int[]>[num_batches]);
 
 	for(uint batch = 0; batch < num_batches; ++batch)
 	{
 		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
-		unique_ptr<int[]> labels  = init_labels<batch_size>(dataset, batch);
-
-		// print_frame<28 * batch_size, 28>(input.get());
-		// print_list<batch_size>(labels.get());
-
 		normalize<batch_size, frame_size>(input.get());
-		unique_ptr<float[]> input_t = transpose<batch_size, frame_size>(input.get());
+
+		inputs_t[batch] = transpose<batch_size, frame_size>(input.get());
+		labels[batch]   = init_labels<batch_size>(dataset, batch);
+	}
+
+	auto t0 = std::chrono::high_resolution_clock::now();
+	for(uint batch = 0; batch < num_batches; ++batch)
+	{
+		unique_ptr<float[]>& input_t = inputs_t[batch];
+		unique_ptr<int[]>& label     = labels[batch];
 
 		// Fist Layer
 		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
+		// unique_ptr<float[]> out_tensor_0_t =
+		//     mul<num_neurons, frame_size, batch_size>(weight_tensor_0_t.get(), input_t.get());
 
 		batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
-		zero_count += ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
+		ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
 
 		// Second Layer
 		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
+		// unique_ptr<float[]> out_tensor_1_t =
+		//     mul<num_neurons, num_neurons, batch_size>(weight_tensor_1_t.get(), out_tensor_0_t.get());
 
 		batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
-		zero_count += ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
+		ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
 
 		// Third Layer
 		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
 		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
+		// unique_ptr<float[]> out_tensor_2_t =
+		//     mul<num_neurons, num_neurons, batch_size>(weight_tensor_2_t.get(), out_tensor_1_t.get());
 
 		batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
-		zero_count += ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
+		ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
 
 		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
 
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_3);
 
-		// print_mat<batch_size, num_units>(out_tensor_3.get());
-
 		Softmax<batch_size, num_units>(out_tensor_3.get());
 
-		int accuracy_batch = get_accuracy<batch_size, num_units>(out_tensor_3.get(), labels.get()) * 100;
+		float accuracy_batch = get_accuracy<batch_size, num_units>(out_tensor_3.get(), label.get());
 		accuracy += accuracy_batch;
-		printf(".");
-		fflush(stdout);
 	}
-	accuracy = accuracy / num_batches;
-	printf("\n");
+	auto t1     = std::chrono::high_resolution_clock::now();
+	double time = std::chrono::duration<double>(t1 - t0).count();
+	LOG(time);
+
+	accuracy /= num_batches;
 	LOG(accuracy);
-#endif
 }
 
 template<uint batch_size>

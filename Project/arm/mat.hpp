@@ -23,7 +23,7 @@ template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance);
 
 template<uint num_neurons, uint batch_size>
-uint ReLU(float* InputTensor, float threshold);
+void ReLU(float* InputTensor, float threshold);
 
 template<uint batch_size, uint num_units>
 void Softmax(float* logits);
