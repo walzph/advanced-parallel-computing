@@ -115,7 +115,7 @@ void batch_normalization_arm(float32_t *in, float32_t *beta, float32_t *mean, fl
 		for(int j = 0; j < m; j += 4) {
 			float32x4_t input = vld1q_f32(in + (i * m + j));
 			// __m256 result = _mm256_fmadd_ps(_mm256_sub_ps(input, mean8ps), zeta8ps, beta8ps);
-			float32x4_t result = vfmaq_n_f32(vsub_f32(input, mean4ps), zeta4ps, beta4ps);
+			float32x4_t result = vfmaq_n_f32(vsubq_f32(input, mean4ps), zeta4ps, beta4ps);
 			vst1q_f32(in + (i * m + j), result);
 		}
 	}
