@@ -86,7 +86,7 @@ unique_ptr<float[]> compute_zeta(float* gamma, float* variance)
 	return zeta;
 }
 
-template<uint num_neurons, uint batch_size>
+template<uint batch_size, uint num_neurons>
 uint ReLU(float* InputTensor, float threshold)
 {
     float n = 255;
@@ -215,7 +215,7 @@ template void normalize<batch_size, frame_size>(float* buf);
 
 template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
 															   
-template uint ReLU<num_neurons, batch_size>(float* InputTensor, float threshold);
+template uint ReLU<batch_size, num_neurons>(float* InputTensor, float threshold);
 
 // template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean,
 //                                                                  float* zeta);
