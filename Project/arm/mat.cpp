@@ -204,7 +204,6 @@ float get_accuracy(float* probs, int* labels)
 
 /* explicit template instantiations */
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
-template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
 template unique_ptr<float[]> mul<batch_size, frame_size, num_neurons>(float* a, float* b);
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_neurons>(float* a, float* b);
 
@@ -223,7 +222,6 @@ template uint ReLU<num_neurons, batch_size>(float* InputTensor, float threshold)
 
 template void batch_normalization<batch_size, num_neurons>(float* in, float* mean, float* beta, float* zeta);
 
-template void ReLU<batch_size, num_neurons>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);
 template float get_accuracy<batch_size, num_units>(float* probs, int* labels);
 
