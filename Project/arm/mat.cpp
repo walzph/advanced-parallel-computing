@@ -86,13 +86,27 @@ unique_ptr<float[]> compute_zeta(float* gamma, float* variance)
 	return zeta;
 }
 
+template<uint num_neurons, uint batch_size>
+void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, float* zeta)
+{
+	for(int i = 0; i < num_neurons; ++i)
+	{
+		for(int j = 0; j < batch_size; j += 8)
+		{
+			float input                     = InputTensor[i * batch_size + j];
+			float result                    = (input - mean[i]) * zeta[i] + beta[i];
+			InputTensor[i * batch_size + j] = result;
+		}
+	}
+}
+
 template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance)
 {
 	for(int i = 0; i < n; ++i)
 	{
 		for(int j = 0; j < m; ++j)
-			in[j * n + i] = ((in[i * n + j] - mean[i]) * gamma[i]) / sqrt(variance[i] + 1e-4) + beta[i];
+			in[j * n + i] = ((in[j * n + i] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
 	}
 }
 
