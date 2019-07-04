@@ -6,13 +6,14 @@
 
 typedef unsigned int uint;
 #define LOG(var) std::cout << #var "=" << var << "\n";
+//#define TEST
 
 using std::unique_ptr;
 using std::vector;
 
 #ifdef TEST
-const uint batch_size  = 1;
-const uint frame_size  = 2;
+const uint batch_size  = 2;
+const uint frame_size  = 4;
 const uint num_neurons = 3;
 const uint num_units   = 2;
 #else

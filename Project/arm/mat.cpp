@@ -19,6 +19,26 @@ unique_ptr<float[]> mul(float* a, float* b)
 	return c;
 }
 
+template<uint rowA, uint colArowB, uint colB>
+unique_ptr<float[]> mulJona(float* a, float* b)
+{
+	unique_ptr<float[]> c(new float[rowA * colB]);
+
+	for(uint i = 0; i < rowA; ++i)
+	{
+		for(uint j = 0; j < colB; ++j)
+		{
+			float c_ij = 0;
+			for(uint k = 0; k < colArowB; ++k)
+			{
+				c_ij += a[i * colArowB + k] * b[k * colB + j];
+			}
+			c[i * colB + j] = c_ij;
+		}
+	}
+	return c;
+}
+
 template<uint m, uint n>
 float max(float* a)
 {
@@ -91,65 +111,67 @@ void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, flo
 	{
 		for(int j = 0; j < batch_size; j += 8)
 		{
-			float input                     = InputTensor[i * batch_size + j];
-			float result                    = (input - mean[i]) * zeta[i] + beta[i];
+			float input = InputTensor[i * batch_size + j];
+			float result = (input - mean[i]) * zeta[i] + beta[i];
 			InputTensor[i * batch_size + j] = result;
 		}
-	}
-}
-
-template<uint m, uint n>
-void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance)
-{
-	for(int i = 0; i < n; ++i)
-	{
-		for(int j = 0; j < m; ++j)
-			in[j * n + i] = ((in[i * n + j] - mean[i]) * gamma[i]) / sqrt(variance[i] + 1e-4) + beta[i];
 	}
 }
 
 template<uint num_neurons, uint batch_size>
 uint ReLU(float* InputTensor, float threshold)
 {
-	float n         = 255;
-	uint zero_count = 0;
-	for(int i = 0; i < batch_size * num_neurons; ++i)
-	{
-		if(InputTensor[i] < threshold)
-		{
-			InputTensor[i] = 0.0;
-		} else if(InputTensor[i] > 1)
-		{
-			InputTensor[i] = 1.0;
-		} else
-		{
-			InputTensor[i] = (round(InputTensor[i] * n) / n);
-		}
-
-		if(InputTensor[i] == 0) zero_count++;
-	}
-	return zero_count;
+    float n = 255;
+    uint zero_count = 0;
+    for(int i = 0; i < batch_size * num_neurons; ++i)
+    {
+        if(InputTensor[i] < threshold)
+        {
+            InputTensor[i] = 0.0;
+        } else if(InputTensor[i] > 1)
+        {
+            InputTensor[i] = 1.0;
+        } else
+        {
+            InputTensor[i] = (round(InputTensor[i] * n) / n);
+        }
+            
+        if(InputTensor[i] == 0) zero_count++;
+    }
+    return zero_count;
 }
 
 template<uint batch_size, uint num_units>
 void Softmax(float* logits)
 {
-	float max, sum;
+    float max, sum;
 
-	for(int id = 0; id < batch_size; ++id)
-	{
-		max = 0.0;
-		sum = 0.0;
-		for(int i = 0; i < num_units; i++)
-			if(max < logits[id * num_units + i]) max = logits[id * num_units + i];
-		for(int i = 0; i < num_units; ++i)
-		{
-			logits[id * num_units + i] = exp(logits[id * num_units + i] - max);
-			sum += logits[id * num_units + i];
-		}
-		for(int i = 0; i < num_units; ++i) { logits[id * num_units + i] /= sum; }
-	}
+    for(int id = 0; id < batch_size; ++id)
+    {
+        max = 0.0;
+        sum = 0.0;
+        for(int i = 0; i < num_units; i++)
+            if(max < logits[id * num_units + i]) max = logits[id * num_units + i];
+        for(int i = 0; i < num_units; ++i)
+        {
+            logits[id * num_units + i] = exp(logits[id * num_units + i] - max);
+            sum += logits[id * num_units + i];
+        }
+        for(int i = 0; i < num_units; ++i) { logits[id * num_units + i] /= sum; }
+    }
 }
+
+template<uint m, uint n>
+void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance)
+{
+    for(int i = 0; i < n; ++i)
+    {
+        for(int j = 0; j < m; ++j)
+            in[j * n + i] = ((in[j * n + i] - mean[i]) * gamma[i]) / sqrt(variance[i] + 1e-4) + beta[i];
+    }
+}
+
+
 
 template<uint batch_size, uint num_units>
 float get_accuracy(float* probs, int* labels)
@@ -174,13 +196,17 @@ float get_accuracy(float* probs, int* labels)
 		// Check against label
 		if(pred_class == labels[id]) correct++;
 	}
+#ifdef PRINT_STATS
+	std::cout << "[STATS] Correct = " << correct << "/" << batch_size << std::endl;
+#endif
+
 	return (float) correct / batch_size;
 }
 
 /* explicit template instantiations */
-template unique_ptr<float[]> mul<num_units, num_neurons, batch_size>(float* a, float* b);
-template unique_ptr<float[]> mul<num_neurons, frame_size, batch_size>(float* a, float* b);
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
+template unique_ptr<float[]> mulJona<batch_size, frame_size, num_neurons>(float* a, float* b);
+template unique_ptr<float[]> mulJona<batch_size, num_neurons, num_units>(float* a, float* b);
 
 template void ternarize<frame_size, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
 template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
@@ -194,12 +220,9 @@ template void normalize<batch_size, frame_size>(float* buf);
 
 template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
 
-template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean,
-                                                                 float* zeta);
-
-template void batch_normalization<num_neurons, batch_size>(float* in, float* beta, float* gamma, float* mean,
-                                                           float* variance);
-
+template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean, float* zeta);
 template uint ReLU<num_neurons, batch_size>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);
 template float get_accuracy<batch_size, num_units>(float* probs, int* labels);
+
+template void batch_normalization<num_neurons, batch_size>(float* in, float* beta, float* gamma, float* mean,float* variance);
