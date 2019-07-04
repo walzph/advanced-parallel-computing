@@ -101,10 +101,10 @@ void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, flo
 template<uint m, uint n>
 void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance)
 {
-	for(int i = 0; i < n; ++i)
+	for(int i = 0; i < m; ++i)
 	{
-		for(int j = 0; j < m; ++j)
-			in[j * n + i] = ((in[j * n + i] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
+		for(int j = 0; j < n; ++j)
+			in[i * n + j] = ((in[i * n + j] - mean[j]) * gamma[j]) / sqrt(variance[j] + 1e-4) + beta[j];
 	}
 }
 
@@ -174,29 +174,31 @@ float get_accuracy(float* probs, int* labels)
 }
 
 /* explicit template instantiations */
-template unique_ptr<float[]> mul<num_units, num_neurons, batch_size>(float* a, float* b);
-template unique_ptr<float[]> mul<num_neurons, frame_size, batch_size>(float* a, float* b);
-template unique_ptr<float[]> mul<num_neurons, num_neurons, batch_size>(float* a, float* b);
+// template unique_ptr<float[]> mul<num_units, num_neurons, batch_size>(float* a, float* b);
+// template unique_ptr<float[]> mul<num_neurons, frame_size, batch_size>(float* a, float* b);
+// template unique_ptr<float[]> mul<num_neurons, num_neurons, batch_size>(float* a, float* b);
 template unique_ptr<float[]> mul<batch_size, num_neurons, num_units>(float* a, float* b);
+template unique_ptr<float[]> mul<batch_size, frame_size, num_neurons>(float* a, float* b);
+template unique_ptr<float[]> mul<batch_size, num_neurons, num_neurons>(float* a, float* b);
 
 template void ternarize<frame_size, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
 template void ternarize<num_neurons, num_neurons>(float* a, float weight_pos, float weight_neg, float threshold);
 
-template unique_ptr<float[]> transpose<frame_size, num_neurons>(float* a);
-template unique_ptr<float[]> transpose<num_neurons, num_neurons>(float* a);
-template unique_ptr<float[]> transpose<batch_size, frame_size>(float* a);
-template unique_ptr<float[]> transpose<num_neurons, batch_size>(float* a);
+// template unique_ptr<float[]> transpose<frame_size, num_neurons>(float* a);
+// template unique_ptr<float[]> transpose<num_neurons, num_neurons>(float* a);
+// template unique_ptr<float[]> transpose<batch_size, frame_size>(float* a);
+// template unique_ptr<float[]> transpose<num_neurons, batch_size>(float* a);
 
 template void normalize<batch_size, frame_size>(float* buf);
 
-template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
+// template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* variance);
 
-template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean,
-                                                                 float* zeta);
+// template void BatchnormalizationCMOZeta<num_neurons, batch_size>(float* InputTensor, float* beta, float* mean,
+//                                                                  float* zeta);
 
-template void batch_normalization<num_neurons, batch_size>(float* in, float* beta, float* gamma, float* mean,
+template void batch_normalization<batch_size, num_neurons>(float* in, float* beta, float* gamma, float* mean,
                                                            float* variance);
 
-template void ReLU<num_neurons, batch_size>(float* InputTensor, float threshold);
+template void ReLU<batch_size, num_neurons>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);
 template float get_accuracy<batch_size, num_units>(float* probs, int* labels);

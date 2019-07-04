@@ -41,10 +41,10 @@ int main(int argc, char* argv[])
 	assert(fabs(weight_neg_0 - -1.2224674) < 0.00001);
 
 	ternarize<frame_size, num_neurons>(weight_tensor_0, weight_pos_0, weight_neg_0, 0.1f);
-	unique_ptr<float[]> weight_tensor_0_t = transpose<frame_size, num_neurons>(weight_tensor_0);
+	// unique_ptr<float[]> weight_tensor_0_t = transpose<frame_size, num_neurons>(weight_tensor_0);
 
 	unique_ptr<sparse_list_tuple[]> sparse_lists_0 =
-	    createSparseList<num_neurons, frame_size>(weight_tensor_0_t.get(), weight_pos_0, weight_neg_0);
+	    createSparseList<frame_size, num_neurons>(weight_tensor_0, weight_pos_0, weight_neg_0);
 
 	assert(num_neurons == parameters_npz["fc0/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn0/beta:0"].shape[0]);
@@ -58,8 +58,6 @@ int main(int argc, char* argv[])
 	float* mean_0     = parameters_npz["bn0/mean/EMA:0"].data<float>();
 	float* variance_0 = parameters_npz["bn0/variance/EMA:0"].data<float>();
 
-	unique_ptr<float[]> zeta_0 = compute_zeta<num_neurons>(gamma_0, variance_0);
-
 	assert(num_neurons == parameters_npz["fc1/W:0"].shape[0]);
 	assert(num_neurons == parameters_npz["fc1/W:0"].shape[1]);
 
@@ -72,10 +70,10 @@ int main(int argc, char* argv[])
 	assert(fabs(weight_neg_1 - -1.1117288) < 0.00001);
 
 	ternarize<num_neurons, num_neurons>(weight_tensor_1, weight_pos_1, weight_neg_1, 0.1f);
-	unique_ptr<float[]> weight_tensor_1_t = transpose<num_neurons, num_neurons>(weight_tensor_1);
+	// unique_ptr<float[]> weight_tensor_1_t = transpose<num_neurons, num_neurons>(weight_tensor_1);
 
 	unique_ptr<sparse_list_tuple[]> sparse_lists_1 =
-	    createSparseList<num_neurons, num_neurons>(weight_tensor_1_t.get(), weight_pos_1, weight_neg_1);
+	    createSparseList<num_neurons, num_neurons>(weight_tensor_1, weight_pos_1, weight_neg_1);
 
 	assert(num_neurons == parameters_npz["fc1/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn1/beta:0"].shape[0]);
@@ -89,8 +87,6 @@ int main(int argc, char* argv[])
 	float* mean_1     = parameters_npz["bn1/mean/EMA:0"].data<float>();
 	float* variance_1 = parameters_npz["bn1/variance/EMA:0"].data<float>();
 
-	unique_ptr<float[]> zeta_1 = compute_zeta<num_neurons>(gamma_1, variance_1);
-
 	assert(num_neurons == parameters_npz["fc2/W:0"].shape[0]);
 	assert(num_neurons == parameters_npz["fc2/W:0"].shape[1]);
 
@@ -103,10 +99,10 @@ int main(int argc, char* argv[])
 	assert(fabs(weight_neg_2 - -1.119899) < 0.00001);
 
 	ternarize<num_neurons, num_neurons>(weight_tensor_2, weight_pos_2, weight_neg_2, 0.1f);
-	unique_ptr<float[]> weight_tensor_2_t = transpose<num_neurons, num_neurons>(weight_tensor_2);
+	// unique_ptr<float[]> weight_tensor_2_t = transpose<num_neurons, num_neurons>(weight_tensor_2);
 
 	unique_ptr<sparse_list_tuple[]> sparse_lists_2 =
-	    createSparseList<num_neurons, num_neurons>(weight_tensor_2_t.get(), weight_pos_2, weight_neg_2);
+	    createSparseList<num_neurons, num_neurons>(weight_tensor_2, weight_pos_2, weight_neg_2);
 
 	assert(num_neurons == parameters_npz["fc2/b:0"].shape[0]);
 	assert(num_neurons == parameters_npz["bn2/beta:0"].shape[0]);
@@ -120,14 +116,10 @@ int main(int argc, char* argv[])
 	float* mean_2     = parameters_npz["bn2/mean/EMA:0"].data<float>();
 	float* variance_2 = parameters_npz["bn2/variance/EMA:0"].data<float>();
 
-	unique_ptr<float[]> zeta_2 = compute_zeta<num_neurons>(gamma_2, variance_2);
-
 	assert(num_neurons == parameters_npz["fc3/W:0"].shape[0]);
 	assert(num_units == parameters_npz["fc3/W:0"].shape[1]);
 
 	float* weight_tensor_3 = parameters_npz["fc3/W:0"].data<float>();
-
-	unique_ptr<float[]> weight_tensor_3_t = transpose<frame_size, num_neurons>(weight_tensor_3);
 
 	assert(num_units == parameters_npz["fc3/b:0"].shape[0]);
 	float* bias_3 = parameters_npz["fc3/b:0"].data<float>();
@@ -137,52 +129,53 @@ int main(int argc, char* argv[])
 	uint num_batches = n_test_set / batch_size;
 	float accuracy   = 0;
 
-	unique_ptr<unique_ptr<float[]>[]> inputs_t(new unique_ptr<float[]>[num_batches]);
+	unique_ptr<unique_ptr<float[]>[]> inputs(new unique_ptr<float[]>[num_batches]);
 	unique_ptr<unique_ptr<int[]>[]> labels(new unique_ptr<int[]>[num_batches]);
 
 	for(uint batch = 0; batch < num_batches; ++batch)
 	{
-		unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
-		normalize<batch_size, frame_size>(input.get());
-
-		inputs_t[batch] = transpose<batch_size, frame_size>(input.get());
-		labels[batch]   = init_labels<batch_size>(dataset, batch);
+		// unique_ptr<float[]> input = init_input<batch_size>(dataset, batch);
+		// normalize<batch_size, frame_size>(input.get());
+		//
+		// inputs_t[batch] = transpose<batch_size, frame_size>(input.get());
+		inputs[batch] = init_input<batch_size>(dataset, batch);
+		normalize<batch_size, frame_size>(inputs[batch].get());
+		labels[batch] = init_labels<batch_size>(dataset, batch);
 	}
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 	for(uint batch = 0; batch < num_batches; ++batch)
 	{
-		unique_ptr<float[]>& input_t = inputs_t[batch];
-		unique_ptr<int[]>& label     = labels[batch];
+		unique_ptr<float[]>& input = inputs[batch];
+		unique_ptr<int[]>& label   = labels[batch];
 
 		// Fist Layer
-		unique_ptr<float[]> out_tensor_0_t = sparseMatrixMultiply<num_neurons, batch_size>(
-		    input_t.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
-		// unique_ptr<float[]> out_tensor_0_t =
-		//     mul<num_neurons, frame_size, batch_size>(weight_tensor_0_t.get(), input_t.get());
+		unique_ptr<float[]> out_tensor_0 = sparseMatrixMultiply<batch_size, frame_size, num_neurons>(
+		    input.get(), sparse_lists_0.get(), weight_pos_0, weight_neg_0);
+		// unique_ptr<float[]> out_tensor_0 = mul<batch_size, frame_size, num_neurons>(input.get(), weight_tensor_0);
 
-		batch_normalization<num_neurons, batch_size>(out_tensor_0_t.get(), beta_0, gamma_0, mean_0, variance_0);
-		ReLU<num_neurons, batch_size>(out_tensor_0_t.get(), 0.0);
+		batch_normalization<batch_size, num_neurons>(out_tensor_0.get(), beta_0, gamma_0, mean_0, variance_0);
+		ReLU<batch_size, num_neurons>(out_tensor_0.get(), 0.0);
 
 		// Second Layer
-		unique_ptr<float[]> out_tensor_1_t = sparseMatrixMultiply<num_neurons, batch_size>(
-		    out_tensor_0_t.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
-		// unique_ptr<float[]> out_tensor_1_t =
-		//     mul<num_neurons, num_neurons, batch_size>(weight_tensor_1_t.get(), out_tensor_0_t.get());
+		unique_ptr<float[]> out_tensor_1 = sparseMatrixMultiply<batch_size, num_neurons, num_neurons>(
+		    out_tensor_0.get(), sparse_lists_1.get(), weight_pos_1, weight_neg_1);
+		// unique_ptr<float[]> out_tensor_1 =
+		//     mul<batch_size, num_neurons, num_neurons>(out_tensor_0.get(), weight_tensor_1);
 
-		batch_normalization<num_neurons, batch_size>(out_tensor_1_t.get(), beta_1, gamma_1, mean_1, variance_1);
-		ReLU<num_neurons, batch_size>(out_tensor_1_t.get(), 0.0);
+		batch_normalization<batch_size, num_neurons>(out_tensor_1.get(), beta_1, gamma_1, mean_1, variance_1);
+		ReLU<batch_size, num_neurons>(out_tensor_1.get(), 0.0);
 
 		// Third Layer
-		unique_ptr<float[]> out_tensor_2_t = sparseMatrixMultiply<num_neurons, batch_size>(
-		    out_tensor_1_t.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
-		// unique_ptr<float[]> out_tensor_2_t =
-		//     mul<num_neurons, num_neurons, batch_size>(weight_tensor_2_t.get(), out_tensor_1_t.get());
+		unique_ptr<float[]> out_tensor_2 = sparseMatrixMultiply<batch_size, num_neurons, num_neurons>(
+		    out_tensor_1.get(), sparse_lists_2.get(), weight_pos_2, weight_neg_2);
+		// unique_ptr<float[]> out_tensor_2 =
+		//     mul<batch_size, num_neurons, num_neurons>(out_tensor_1.get(), weight_tensor_2);
 
-		batch_normalization<num_neurons, batch_size>(out_tensor_2_t.get(), beta_2, gamma_2, mean_2, variance_2);
-		ReLU<num_neurons, batch_size>(out_tensor_2_t.get(), 0.0);
+		batch_normalization<batch_size, num_neurons>(out_tensor_2.get(), beta_2, gamma_2, mean_2, variance_2);
+		ReLU<batch_size, num_neurons>(out_tensor_2.get(), 0.0);
 
-		unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
+		// unique_ptr<float[]> out_tensor_2 = transpose<num_neurons, batch_size>(out_tensor_2_t.get());
 
 		unique_ptr<float[]> out_tensor_3 = mul<batch_size, num_neurons, num_units>(out_tensor_2.get(), weight_tensor_3);
 
