@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 
+#include <arm_neon.h>
+
 template<uint m, uint n, uint p>
 unique_ptr<float[]> mul(float* a, float* b)
 {
