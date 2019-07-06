@@ -1,6 +1,6 @@
 .PHONY: build rebuild clean
 
-CFLAGS+=-I./inc/ -I./third_party/mnist/include
+CFLAGS+=-O3 -I./inc/ -I./third_party/mnist/include
 LDFLAGS+=-lcnpy
 
 build: main
