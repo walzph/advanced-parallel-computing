@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+make clean > /dev/null
+for i in {0..13}; do
+	echo BATCH_SIZE=$[2**$i]
+	make BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
+	printf "\n--------------------\n\n"
+done
+make clean > /dev/null

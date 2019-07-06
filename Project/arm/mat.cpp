@@ -3,6 +3,10 @@
 #include <cassert>
 #include <cmath>
 
+#ifdef USE_VEC
+#include <arm_neon.h>
+#endif
+
 template<uint m, uint n, uint p>
 unique_ptr<float[]> mul(float* a, float* b)
 {
@@ -108,16 +112,47 @@ void batch_normalization(float* in, float* beta, float* gamma, float* mean, floa
 	}
 }
 
+#ifndef USE_VEC
 template<uint m, uint n>
 void batch_normalization(float* in, float* mean, float* beta, float* zeta)
 {
+#ifdef USE_OMP_FOR
 #pragma omp parallel for
+#endif
 	for(int i = 0; i < m; ++i)
 	{
+#ifdef USE_OMP_SIMD
 #pragma omp simd
+#endif
 		for(int j = 0; j < n; ++j) in[i * n + j] = ((in[i * n + j] - mean[j]) * zeta[j]) + beta[j];
 	}
 }
+#else
+template<uint batch_size, uint num_neurons>
+void batch_normalization(float32_t* in, float32_t* mean, float32_t* beta, float32_t* zeta)
+{
+	float32x4_t mean4ps;
+	float32x4_t beta4ps;
+	float32x4_t zeta4ps;
+#ifdef USE_OMP_FOR
+#pragma omp parallel for
+#endif
+	for(int i = 0; i < batch_size; ++i)
+	{
+		for(int j = 0; j < num_neurons; j += 4)
+		{
+			mean4ps = vld1q_f32(mean + j);
+			beta4ps = vld1q_f32(beta + j);
+			zeta4ps = vld1q_f32(zeta + j);
+
+			float32x4_t input  = vld1q_f32(in + (i * num_neurons + j));
+			float32x4_t sub    = vsubq_f32(input, mean4ps);
+			float32x4_t result = vfmaq_f32(beta4ps, sub, zeta4ps);
+			vst1q_f32(in + (i * num_neurons + j), result);
+		}
+	}
+}
+#endif
 
 template<uint num_neurons, uint batch_size>
 void ReLU(float* InputTensor, float threshold)
@@ -210,7 +245,12 @@ template unique_ptr<float[]> compute_zeta<num_neurons>(float* gamma, float* vari
 template void batch_normalization<batch_size, num_neurons>(float* in, float* beta, float* gamma, float* mean,
                                                            float* variance);
 
+#ifndef USE_VEC
 template void batch_normalization<batch_size, num_neurons>(float* in, float* mean, float* beta, float* zeta);
+#else
+template void batch_normalization<batch_size, num_neurons>(float32_t* in, float32_t* mean, float32_t* beta,
+                                                           float32_t* zeta);
+#endif
 
 template void ReLU<batch_size, num_neurons>(float* InputTensor, float threshold);
 template void Softmax<batch_size, num_units>(float* logits);

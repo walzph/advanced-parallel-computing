@@ -1,3 +1,5 @@
+#pragma once
+
 #include "util.hpp"
 
 template<uint m, uint n, uint p>
@@ -16,14 +18,13 @@ void normalize(float* buf);
 template<uint num_neurons>
 unique_ptr<float[]> compute_zeta(float* gamma, float* variance);
 
-template<uint num_neurons, uint batch_size>
-void BatchnormalizationCMOZeta(float* InputTensor, float* beta, float* mean, float* zeta);
-
-template<uint m, uint n>
-void batch_normalization(float* in, float* beta, float* gamma, float* mean, float* variance);
-
+#ifndef USE_VEC
 template<uint m, uint n>
 void batch_normalization(float* in, float* mean, float* beta, float* zeta);
+#else
+template<uint m, uint n>
+void batch_normalization(float32_t* in, float32_t* mean, float32_t* beta, float32_t* zeta)
+#endif
 
 template<uint num_neurons, uint batch_size>
 void ReLU(float* InputTensor, float threshold);

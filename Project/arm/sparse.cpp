@@ -51,7 +51,9 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 {
 	unique_ptr<float[]> out(new float[m * p]);
 
+#ifdef USE_OMP_FOR
 #pragma omp parallel for collapse(2)
+#endif
 	for(uint i = 0; i < m; ++i)
 	{
 		for(uint j = 0; j < p; ++j)
@@ -63,14 +65,12 @@ unique_ptr<float[]> sparseMatrixMultiply(const float* input, const sparse_list_t
 			uint pos_n = indices.pos.n;
 			uint neg_n = indices.neg.n;
 
-#pragma omp simd
 			for(uint k = 0; k < pos_n; ++k)
 			{
 				uint idx = indices.pos.i[k];
 				pos += input[i * n + idx];
 			}
 
-#pragma omp simd
 			for(uint k = 0; k < neg_n; ++k)
 			{
 				uint idx = indices.neg.i[k];

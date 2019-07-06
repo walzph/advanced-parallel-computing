@@ -5,16 +5,16 @@
 #include <vector>
 
 typedef unsigned int uint;
-#define LOG(var) std::cout << #var "=" << var << "\n";
+#ifdef DEBUG
+#define LOG(var) std::cout << #var "=" << var << "\n"
+#else
+#define LOG(var)
+#endif
 
 using std::unique_ptr;
 using std::vector;
 
-#ifdef BATCH_SIZE
-const uint batch_size = BATCH_SIZE;
-#else
-const uint batch_size = 64;
-#endif
+const uint batch_size  = BATCH_SIZE;
 const uint frame_size  = 28 * 28;
 const uint num_neurons = 1024;
 const uint num_units   = 10;

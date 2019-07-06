@@ -192,10 +192,16 @@ int main(int argc, char* argv[])
 	}
 	auto t1     = std::chrono::high_resolution_clock::now();
 	double time = std::chrono::duration<double>(t1 - t0).count();
-	LOG(time);
+
+	double performance = (double) n_test_set / time;
+	LOG(performance);
 
 	accuracy /= num_batches;
 	LOG(accuracy);
+
+	printf("accuracy    = %f%%\n"
+	       "performance = %f FPS\n",
+	       accuracy * 100, performance);
 }
 
 template<uint batch_size>
