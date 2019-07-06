@@ -1,4 +1,4 @@
-
+#include <cstring>
 #include <immintrin.h>
 #include <emmintrin.h>
 
@@ -350,6 +350,7 @@ void FcBnReLU( uint8_t* a, uint16_t** b, float* c, float Wp, float Wn, int m, in
   }
 }
 
+#ifdef USE_AVX
 void FcBnReLUAVX2( uint16_t* a, uint16_t** b, float* c, float Wp, float Wn, int m, int n, int k, int bit_a ) {
   uint16_t *c_p = (uint16_t*)malloc( m * sizeof(uint16_t));
 	//float *accu_p_sp = (float*)malloc( m * sizeof(float));
@@ -938,6 +939,7 @@ void SparseDotProductAVX2old( float* a, uint16_t** b, float* c, float Wp, float 
     }
   }
 }
+#endif
 
 /*
 void SparseDotProductNEON( int8_t* a, uint16_t** b, int8_t* c, int m, int n, int k ) {

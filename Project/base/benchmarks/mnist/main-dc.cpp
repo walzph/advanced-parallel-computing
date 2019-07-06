@@ -1,20 +1,17 @@
 #include <iostream>
-#include <time.h>       /* time */
-#include "../../third_party/mnist/include/mnist/mnist_reader.hpp"
-#include "../../third_party/mnist/include/mnist/mnist_utils.hpp"
-#include "../../third_party/cnpy/cnpy.h"
+#include <chrono>
+
+#include <cnpy.h>
+
+#include "mnist/mnist_reader.hpp"
+#include "mnist/mnist_utils.hpp"
+
 // Sparse OPs
-#include "../../inc/sparse_ops.h"
+#include "sparse_ops.h"
 
-#include <math.h>       /* sqrt */
+#include <cmath>
 
- /*
-  *
-  * Compile: g++ -o mnist main.cpp -L../../build/ -lcnpy --std=c++11 -Wall -O3
-  *
-  */
-
-#define MNIST_DATA_LOCATION "../../third_party/mnist/"
+#define MNIST_DATA_LOCATION "third_party/mnist/"
 
 // MLP configuration
 #define BATCH_SIZE 64
@@ -24,7 +21,7 @@
 
 //#define PRINT_STATS
 //#define EIGEN_DONT_VECTORIZE
-#include "../../third_party/Eigen/Eigen/Dense"
+#include <eigen3/Eigen/Dense>
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RMatrixXf;
 
 void FullyConnected( float* InputTensor, float* WeightTensor, float* Output, float* bias, int m, int n, int k ) {
@@ -212,6 +209,7 @@ void compute_zeta( float* zeta, int x, float* gamma, float* variance ) {
   }
 }
 
+#ifdef USE_AVX
 /*
  * Compute Batchnormalization based on pre-computed zeta: TODO
  */
@@ -234,6 +232,7 @@ void BatchnormalizationCMOZeta( float* InputTensor, int x, int y, float* beta, f
     }
   }
 }
+#endif
 
 void Softmax( float* logits, int batch_size, int num_units ) {
   float max, sum;
@@ -376,7 +375,7 @@ int main(int argc, char* argv[]) {
     std::cout << "[INFO] Nbr of test labels = " << dataset.test_labels.size() << std::endl;
 
     /* Initialize all parameters from a numpy file */
-    cnpy::npz_t parameters_npz = cnpy::npz_load("../../trained_models/mnist-t40-final.npz");
+    cnpy::npz_t parameters_npz = cnpy::npz_load("trained_models/mnist-t40-final.npz");
     //cnpy::npz_t parameters_npz = cnpy::npz_load("../../trained_models/mnist-t20.npz");
     //cnpy::npz_t parameters_npz = cnpy::npz_load("./mnist-float32-nn.npz");
 
@@ -530,10 +529,15 @@ int main(int argc, char* argv[]) {
       //FullyConnected( Input0, WeightTensor0, OutputTensor0, bias0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
       //FcBnReLUAVX2( Input0Tint8, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS, 8 );
       //SparseDotProduct( Input0T, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
+#ifdef USE_AVX
       SparseDotProductAVX2( Input0T, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
+      BatchnormalizationCMOZeta( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, beta0, mean0, zeta0 );
+#else
+      SparseDotProduct( Input0T, SparseList0, OutputTensor0T, Wp0, Wn0, BATCH_SIZE, FRAME_SIZE, NUM_NEURONS );
+      BatchnormalizationCMO( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, beta0, gamma0, mean0, variance0 );
+#endif
       //transposeMatrix( OutputTensor0T, OutputTensor0, NUM_NEURONS, BATCH_SIZE );
       //BatchnormalizationCMO( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, beta0, gamma0, mean0, variance0 );
-      BatchnormalizationCMOZeta( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, beta0, mean0, zeta0 );
       zero_count += (unsigned long long int) ReLU( OutputTensor0T, BATCH_SIZE, NUM_NEURONS, 0.0 /*0.25*/, 8 );
       activation_count += (unsigned long long int) BATCH_SIZE * NUM_NEURONS;
 
@@ -541,10 +545,15 @@ int main(int argc, char* argv[]) {
       //FullyConnected( OutputTensor0, WeightTensor1, OutputTensor1, bias1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
       //transposeMatrix( OutputTensor0, OutputTensor0T, BATCH_SIZE, NUM_NEURONS );
       //SAFcBnReLUAVX2( OutputTensor0Tint8, indices, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS, 8 );
+#ifdef USE_AVX
       SparseDotProductAVX2( OutputTensor0T, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+      BatchnormalizationCMOZeta( OutputTensor1T, BATCH_SIZE, NUM_NEURONS, beta1, mean1, zeta1 );
+#else
+      SparseDotProduct( OutputTensor0T, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+      BatchnormalizationCMO( OutputTensor1T, BATCH_SIZE, NUM_NEURONS, beta1, gamma1, mean1, variance1 );
+#endif
       //SASparseDotProduct( SAOutputTensor0T, indices, SparseList1, OutputTensor1T, Wp1, Wn1, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
       //transposeMatrix( OutputTensor1T, OutputTensor1, NUM_NEURONS, BATCH_SIZE );
-      BatchnormalizationCMOZeta( OutputTensor1T, BATCH_SIZE, NUM_NEURONS, beta1, mean1, zeta1 );
       //BatchnormalizationCMO( OutputTensor1T, BATCH_SIZE, NUM_NEURONS, beta1, gamma1, mean1, variance1 );
       zero_count += (unsigned long long int) ReLU( OutputTensor1T, OutputTensor1Tint8, BATCH_SIZE, NUM_NEURONS, 0.0 /*0.32*/, 8 );
       activation_count += (unsigned long long int) BATCH_SIZE * NUM_NEURONS;
@@ -552,10 +561,15 @@ int main(int argc, char* argv[]) {
       // Layer 2
       //FullyConnected( OutputTensor1, WeightTensor2, OutputTensor2, bias2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
       //transposeMatrix( OutputTensor1, OutputTensor1T, BATCH_SIZE, NUM_NEURONS );
+#ifdef USE_AVX
       SparseDotProductAVX2( OutputTensor1T, SparseList2, OutputTensor2T, Wp2, Wn2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+      BatchnormalizationCMOZeta( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, mean2, zeta2 );
+#else
+      SparseDotProduct( OutputTensor1T, SparseList2, OutputTensor2T, Wp2, Wn2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS );
+      BatchnormalizationCMO( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, gamma2, mean2, variance2 );
+#endif
       //FcBnReLUAVX2( OutputTensor1Tint8, SparseList2, OutputTensor2T, Wp2, Wn2, BATCH_SIZE, NUM_NEURONS, NUM_NEURONS, 8 );
       //transposeMatrix( OutputTensor2T, OutputTensor2, NUM_NEURONS, BATCH_SIZE );
-      BatchnormalizationCMOZeta( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, mean2, zeta2 );
       //BatchnormalizationCMO( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, beta2, gamma2, mean2, variance2 );
       zero_count += (unsigned long long int) ReLU( OutputTensor2T, BATCH_SIZE, NUM_NEURONS, 0.0, 32 );
       activation_count += (unsigned long long int) BATCH_SIZE * NUM_NEURONS;
