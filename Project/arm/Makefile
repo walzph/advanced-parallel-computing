@@ -1,24 +1,23 @@
 .PHONY: build clean rebuild run
 
-CFLAGS += -O3 -march=native -mtune=native -fopenmp -Wall --std=c++14 -Imnist/include
-#CFLAGS += -O0 -fopenmp -Wall --std=c++14 -Imnist/include
+CFLAGS += -O3 -march=native -mtune=native -fopenmp --std=c++14 -Imnist/include
 LDFLAGS += -fopenmp -lcnpy
 
-OBJ := test.o mat.o sparse.o
+OBJ := main.o mat.o sparse.o
 SRC_DEP := $(patsubst %.o,%.d,$(OBJ))
 DEP_DEP := $(patsubst %.o,%.d.d,$(OBJ))
 
-build: test
+build: main
 
 rebuild: clean build
 
 clean:
-	rm -f main main_avx test $(OBJ)
+	rm -f main $(OBJ)
 ifeq ($(MAKECMDGOALS),clean)
 	rm -f $(SRC_DEP) $(DEP_DEP)
 endif
 
-test: $(OBJ)
+main: $(OBJ)
 
 %:
 	@echo "LINK $^ ==> $@"
