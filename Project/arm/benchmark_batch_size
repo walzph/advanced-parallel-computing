@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
 
+printf "\n--------------------\n\n"
+printf "using openmp parallel & explicit vector instructions:\n"
 make clean > /dev/null
 for i in {0..13}; do
 	echo BATCH_SIZE=$[2**$i]
-	make BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
+	make USE_OMP=1 USE_OMP_FOR=1 USE_OMP_SIMD=0 USE_VEC=1 BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
 	printf "\n--------------------\n\n"
 done
 make clean > /dev/null
 
+sleep 1m
 
+printf "\n--------------------\n\n"
+printf "using openmp parallel & SIMD:\n"
 make clean > /dev/null
 for i in {0..13}; do
 	echo BATCH_SIZE=$[2**$i]
-	make USE_OMP=0 USE_OMP_SIMD=0 USE_VEC=0 BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
+	make USE_OMP=1 USE_OMP_FOR=1 USE_OMP_SIMD=1 USE_VEC=0 BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
 	printf "\n--------------------\n\n"
 done
 make clean > /dev/null
 
-
+sleep 1m
 
 printf "\n--------------------\n\n"
 printf "using openmp parallel:\n"
@@ -29,7 +34,7 @@ for i in {0..13}; do
 done
 make clean > /dev/null
 
-
+sleep 1m
 
 
 printf "\n--------------------\n\n"
@@ -42,20 +47,7 @@ for i in {0..13}; do
 done
 make clean > /dev/null
 
-
-
-
-printf "\n--------------------\n\n"
-printf "using openmp parallel & SIMD:\n"
-make clean > /dev/null
-for i in {0..13}; do
-	echo BATCH_SIZE=$[2**$i]
-	make USE_OMP=1 USE_OMP_FOR=1 USE_OMP_SIMD=1 USE_VEC=0 BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
-	printf "\n--------------------\n\n"
-done
-make clean > /dev/null
-
-
+sleep 1m
 
 
 printf "\n--------------------\n\n"
@@ -68,14 +60,14 @@ for i in {0..13}; do
 done
 make clean > /dev/null
 
-
+sleep 1m
 
 printf "\n--------------------\n\n"
-printf "using openmp parallel & explicit vector instructions:\n"
+printf "using nothing:\n"
 make clean > /dev/null
 for i in {0..13}; do
 	echo BATCH_SIZE=$[2**$i]
-	make USE_OMP=1 USE_OMP_FOR=1 USE_OMP_SIMD=0 USE_VEC=1 BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
+	make USE_OMP=0 USE_OMP_SIMD=0 USE_VEC=0 BATCH_SIZE=$[2**$i] rebuild > /dev/null && ./main
 	printf "\n--------------------\n\n"
 done
 make clean > /dev/null
