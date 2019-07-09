@@ -2,6 +2,10 @@
 
 #include "util.hpp"
 
+#ifdef USE_VEC
+#include <arm_neon.h>
+#endif
+
 template<uint m, uint n, uint p>
 unique_ptr<float[]> mul(float* a, float* b);
 
@@ -23,7 +27,7 @@ template<uint m, uint n>
 void batch_normalization(float* in, float* mean, float* beta, float* zeta);
 #else
 template<uint m, uint n>
-void batch_normalization(float32_t* in, float32_t* mean, float32_t* beta, float32_t* zeta)
+void batch_normalization(float32_t* in, float32_t* mean, float32_t* beta, float32_t* zeta);
 #endif
 
 template<uint num_neurons, uint batch_size>
